@@ -3,7 +3,8 @@ package com.agoda.kafka.connector.jdbc
 import java.io.IOException
 import java.sql.{Connection, PreparedStatement, ResultSet}
 
-import com.agoda.kafka.connector.jdbc.Modes.IncrementingMode
+import com.agoda.kafka.connector.jdbc.models.Mode.IncrementingMode
+import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.Schema.Type
 import org.apache.kafka.connect.source.SourceRecord
@@ -43,12 +44,12 @@ case class IdBasedDataFetcher(storedProcedureName: String, batchSize: Int, batch
         case Some(keyField) =>
           sourceRecords += new SourceRecord(
             Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(Modes.getValue(IncrementingMode) -> id).asJava, topic, null, schema, data.get(keyField), schema, data
+            Map(IncrementingMode.entryName -> id).asJava, topic, null, schema, data.get(keyField), schema, data
           )
         case None           =>
           sourceRecords += new SourceRecord(
             Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(Modes.getValue(IncrementingMode) -> id).asJava, topic, schema, data
+            Map(IncrementingMode.entryName -> id).asJava, topic, schema, data
           )
       }
     }
@@ -60,6 +61,7 @@ case class IdBasedDataFetcher(storedProcedureName: String, batchSize: Int, batch
     s"""
        |{
        |   "name" : ${this.getClass.getSimpleName}
+       |   "mode" : ${IncrementingMode.entryName}
        |   "stored-procedure.name" : $storedProcedureName
        |}
     """.stripMargin

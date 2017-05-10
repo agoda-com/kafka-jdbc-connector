@@ -4,7 +4,8 @@ import java.io.IOException
 import java.sql.{Connection, PreparedStatement, ResultSet, Timestamp}
 import java.util.{Date, GregorianCalendar, TimeZone}
 
-import com.agoda.kafka.connector.jdbc.Modes.{IncrementingMode, TimestampMode}
+import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampMode}
+import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.Schema.Type
 import org.apache.kafka.connect.source.SourceRecord
@@ -16,8 +17,8 @@ case class TimeIdBasedDataFetcher(storedProcedureName: String, batchSize: Int, b
                                   timestampVariableName: String, var timestampOffset: Long,
                                   incrementingVariableName: String, var incrementingOffset: Long,
                                   timestampFieldName: String, incrementingFieldName: String, topic: String,
-                                  keyFieldOpt: Option[String]
-                                 ) extends DataFetcher {
+                                  keyFieldOpt: Option[String]) extends DataFetcher {
+
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
   override def createPreparedStatement(connection: Connection): PreparedStatement = {
@@ -52,13 +53,13 @@ case class TimeIdBasedDataFetcher(storedProcedureName: String, batchSize: Int, b
         case Some(keyField) =>
           sourceRecords += new SourceRecord(
             Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(Modes.getValue(TimestampMode) -> time, Modes.getValue(IncrementingMode) -> id).asJava,
+            Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
             topic, null, schema, data.get(keyField), schema, data
           )
         case None           =>
           sourceRecords += new SourceRecord(
             Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(Modes.getValue(TimestampMode) -> time, Modes.getValue(IncrementingMode) -> id).asJava,
+            Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
             topic, schema, data
           )
       }
@@ -72,6 +73,7 @@ case class TimeIdBasedDataFetcher(storedProcedureName: String, batchSize: Int, b
     s"""
        |{
        |   "name" : ${this.getClass.getSimpleName}
+       |   "mode" : ${TimestampMode.entryName}+${IncrementingMode.entryName}
        |   "stored-procedure.name" : $storedProcedureName
        |}
     """.stripMargin

@@ -1,9 +1,10 @@
-package com.agoda.kafka.connector.jdbc
+package com.agoda.kafka.connector.jdbc.utils
 
 import java.io.IOException
 import java.sql.{ResultSet, ResultSetMetaData, SQLException, Types}
 import java.util.{GregorianCalendar, TimeZone}
 
+import com.agoda.kafka.connector.jdbc.JdbcSourceTask
 import org.apache.kafka.connect.data._
 import org.slf4j.LoggerFactory
 

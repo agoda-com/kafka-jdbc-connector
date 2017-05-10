@@ -3,7 +3,8 @@ package com.agoda.kafka.connector.jdbc
 import java.sql.{Connection, PreparedStatement, ResultSet, Timestamp}
 import java.util.{Date, GregorianCalendar, TimeZone}
 
-import com.agoda.kafka.connector.jdbc.Modes.TimestampMode
+import com.agoda.kafka.connector.jdbc.models.Mode.TimestampMode
+import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.source.SourceRecord
 
@@ -13,6 +14,7 @@ import scala.collection.mutable.ListBuffer
 case class TimeBasedDataFetcher(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
                                 timestampVariableName: String, var timestampOffset: Long, timestampFieldName: String,
                                 topic: String, keyFieldOpt: Option[String]) extends DataFetcher {
+
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
   override protected def createPreparedStatement(connection: Connection): PreparedStatement = {
@@ -35,12 +37,12 @@ case class TimeBasedDataFetcher(storedProcedureName: String, batchSize: Int, bat
         case Some(keyField) =>
           sourceRecords += new SourceRecord(
             Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(Modes.getValue(TimestampMode) -> time).asJava, topic, null, schema, data.get(keyField), schema, data
+            Map(TimestampMode.entryName -> time).asJava, topic, null, schema, data.get(keyField), schema, data
           )
         case None           =>
           sourceRecords += new SourceRecord(
             Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(Modes.getValue(TimestampMode) -> time).asJava, topic, schema, data
+            Map(TimestampMode.entryName -> time).asJava, topic, schema, data
           )
       }
     }
@@ -52,6 +54,7 @@ case class TimeBasedDataFetcher(storedProcedureName: String, batchSize: Int, bat
     s"""
        |{
        |   "name" : ${this.getClass.getSimpleName}
+       |   "mode" : ${TimestampMode.entryName}
        |   "stored-procedure.name" : $storedProcedureName
        |}
     """.stripMargin

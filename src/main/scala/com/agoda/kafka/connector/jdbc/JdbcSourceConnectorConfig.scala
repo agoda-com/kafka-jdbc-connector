@@ -3,6 +3,8 @@ package com.agoda.kafka.connector.jdbc
 import java.sql.Timestamp
 
 import com.agoda.kafka.connector.jdbc.JdbcSourceConnectorConstants._
+import com.agoda.kafka.connector.jdbc.models.Mode
+import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
 
 class JdbcSourceConnectorConfig(val properties: Map[String, String]) {
 
@@ -21,34 +23,34 @@ class JdbcSourceConnectorConfig(val properties: Map[String, String]) {
   )
 
   require(
-    Modes.getMode(properties(MODE_CONFIG)) match {
-      case Modes.TimestampMode              => properties.contains(TIMESTAMP_VARIABLE_NAME_CONFIG) &&
-                                               properties.contains(TIMESTAMP_FIELD_NAME_CONFIG)
-      case Modes.IncrementingMode           => properties.contains(INCREMENTING_VARIABLE_NAME_CONFIG) &&
-                                               properties.contains(INCREMENTING_FIELD_NAME_CONFIG)
-      case Modes.TimestampIncrementingMode  => properties.contains(TIMESTAMP_VARIABLE_NAME_CONFIG) &&
-                                               properties.contains(TIMESTAMP_FIELD_NAME_CONFIG) &&
-                                               properties.contains(INCREMENTING_VARIABLE_NAME_CONFIG) &&
-                                               properties.contains(INCREMENTING_FIELD_NAME_CONFIG)
+    Mode.withName(properties(MODE_CONFIG)) match {
+      case TimestampMode              => properties.contains(TIMESTAMP_VARIABLE_NAME_CONFIG) &&
+                                         properties.contains(TIMESTAMP_FIELD_NAME_CONFIG)
+      case IncrementingMode           => properties.contains(INCREMENTING_VARIABLE_NAME_CONFIG) &&
+                                         properties.contains(INCREMENTING_FIELD_NAME_CONFIG)
+      case TimestampIncrementingMode  => properties.contains(TIMESTAMP_VARIABLE_NAME_CONFIG) &&
+                                         properties.contains(TIMESTAMP_FIELD_NAME_CONFIG) &&
+                                         properties.contains(INCREMENTING_VARIABLE_NAME_CONFIG) &&
+                                         properties.contains(INCREMENTING_FIELD_NAME_CONFIG)
     },
-    Modes.getMode(properties(MODE_CONFIG)) match {
-      case Modes.TimestampMode              => s"""Required connector properties:
-                                                   |  $TIMESTAMP_VARIABLE_NAME_CONFIG
-                                                   |  $TIMESTAMP_FIELD_NAME_CONFIG""".stripMargin
-      case Modes.IncrementingMode           => s"""Required connector properties:
-                                                   |  $INCREMENTING_VARIABLE_NAME_CONFIG
-                                                   |  $INCREMENTING_FIELD_NAME_CONFIG""".stripMargin
-      case Modes.TimestampIncrementingMode  => s"""Required connector properties:
-                                                   |  $TIMESTAMP_VARIABLE_NAME_CONFIG
-                                                   |  $TIMESTAMP_FIELD_NAME_CONFIG
-                                                   |  $INCREMENTING_VARIABLE_NAME_CONFIG
-                                                   |  $INCREMENTING_FIELD_NAME_CONFIG""".stripMargin
+    Mode.withName(properties(MODE_CONFIG)) match {
+      case TimestampMode              => s"""Required connector properties:
+                                             |  $TIMESTAMP_VARIABLE_NAME_CONFIG
+                                             |  $TIMESTAMP_FIELD_NAME_CONFIG""".stripMargin
+      case IncrementingMode           => s"""Required connector properties:
+                                             |  $INCREMENTING_VARIABLE_NAME_CONFIG
+                                             |  $INCREMENTING_FIELD_NAME_CONFIG""".stripMargin
+      case TimestampIncrementingMode  => s"""Required connector properties:
+                                             |  $TIMESTAMP_VARIABLE_NAME_CONFIG
+                                             |  $TIMESTAMP_FIELD_NAME_CONFIG
+                                             |  $INCREMENTING_VARIABLE_NAME_CONFIG
+                                             |  $INCREMENTING_FIELD_NAME_CONFIG""".stripMargin
     }
   )
 
   def getConnectionUrl: String = properties(CONNECTION_URL_CONFIG)
 
-  def getMode: String = properties(MODE_CONFIG)
+  def getMode: Mode = Mode.withName(properties(MODE_CONFIG))
 
   def getStoredProcedureName: String = properties(STORED_PROCEDURE_NAME_CONFIG)
 

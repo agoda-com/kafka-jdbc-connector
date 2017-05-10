@@ -4,7 +4,8 @@ import java.sql.{Connection, DriverManager, SQLException}
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.agoda.kafka.connector.jdbc.Modes.{IncrementingMode, TimestampMode}
+import com.agoda.kafka.connector.jdbc.models.Mode
+import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
 import com.agoda.kafka.connector.jdbc.utils.Version
 import org.apache.kafka.connect.errors.ConnectException
 import org.apache.kafka.connect.source.{SourceRecord, SourceTask}
@@ -54,20 +55,20 @@ class JdbcSourceTask extends SourceTask {
     val topic                       = config.getTopic
     val keyFieldOpt                 = config.getKeyField
 
-    Modes.getMode(config.getMode) match {
-      case Modes.TimestampMode =>
-        val timestampOffset = Try(offset.get(Modes.getValue(TimestampMode))).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
+    config.getMode match {
+      case TimestampMode =>
+        val timestampOffset = Try(offset.get(TimestampMode.entryName)).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
         dataFetcher = TimeBasedDataFetcher(storedProcedureName, batchSize, batchSizeVariableName,
             timestampVariableNameOpt.get, timestampOffset, timestampFieldNameOpt.get, topic, keyFieldOpt)
 
-      case Modes.IncrementingMode =>
-        val incrementingOffset = Try(offset.get(Modes.getValue(IncrementingMode))).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
+      case IncrementingMode =>
+        val incrementingOffset = Try(offset.get(IncrementingMode.entryName)).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
         dataFetcher = IdBasedDataFetcher(storedProcedureName, batchSize, batchSizeVariableName,
             incrementingVariableNameOpt.get, incrementingOffset, incrementingFieldNameOpt.get, topic, keyFieldOpt)
 
-      case Modes.TimestampIncrementingMode =>
-        val timestampOffset    = Try(offset.get(Modes.getValue(TimestampMode))).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
-        val incrementingOffset = Try(offset.get(Modes.getValue(IncrementingMode))).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
+      case TimestampIncrementingMode =>
+        val timestampOffset    = Try(offset.get(TimestampMode.entryName)).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
+        val incrementingOffset = Try(offset.get(IncrementingMode.entryName)).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
         dataFetcher = TimeIdBasedDataFetcher(storedProcedureName, batchSize, batchSizeVariableName,
             timestampVariableNameOpt.get, timestampOffset, incrementingVariableNameOpt.get, incrementingOffset,
             timestampFieldNameOpt.get, incrementingFieldNameOpt.get, topic, keyFieldOpt)

@@ -2,6 +2,7 @@ package com.agoda.kafka.connector.jdbc
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
 
+import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.source.SourceRecord
 import org.slf4j.LoggerFactory
