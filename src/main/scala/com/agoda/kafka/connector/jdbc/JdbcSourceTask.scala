@@ -4,7 +4,6 @@ import java.sql.{Connection, DriverManager, SQLException}
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.agoda.kafka.connector.jdbc.models.Mode
 import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
 import com.agoda.kafka.connector.jdbc.utils.Version
 import org.apache.kafka.connect.errors.ConnectException
@@ -28,7 +27,7 @@ class JdbcSourceTask extends SourceTask {
   override def start(props: util.Map[String, String]): Unit = {
     Try(new JdbcSourceTaskConfig(props.asScala.toMap)) match {
       case Success(c) => config = c
-      case Failure(e) => throw new ConnectException("Couldn't start JdbcSourceTask due to configuration error", e)
+      case Failure(e) => logger.error("Couldn't start com.agoda.kafka.connector.jdbc.JdbcSourceTask due to configuration error", new ConnectException(e))
     }
 
     val dbUrl = config.getConnectionUrl

@@ -21,7 +21,7 @@ class JdbcSourceConnector extends SourceConnector {
   override def start(props: util.Map[String, String]): Unit = {
     Try (new JdbcSourceConnectorConfig(props.asScala.toMap)) match {
       case Success(c) => config = c
-      case Failure(e) => throw new ConnectException("Couldn't start com.agoda.kafka.connector.jdbc.JdbcSourceConnector due to configuration error", e)
+      case Failure(e) => logger.error("Couldn't start com.agoda.kafka.connector.jdbc.JdbcSourceConnector due to configuration error", new ConnectException(e))
     }
   }
 
