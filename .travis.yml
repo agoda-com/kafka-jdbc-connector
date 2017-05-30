@@ -1,0 +1,15 @@
+language: scala
+sudo: false
+scala:
+  - "2.12.2"
+jdk:
+  - oraclejdk8
+env:
+  matrix:
+    - SCRIPT="sbt -jvm-opts .travis-jvmopts +test"
+# important to use eval, otherwise "&&" is passed as an argument to sbt rather than being processed by bash
+script: eval $SCRIPT
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot
