@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/agoda-com/kafka-jdbc-connector.svg?branch=master)](https://travis-ci.org/agoda-com/kafka-jdbc-connector)
+
 Kafka JDBC Connector
 ====================
 
