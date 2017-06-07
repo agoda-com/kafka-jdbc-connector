@@ -11,12 +11,13 @@ import org.apache.kafka.connect.source.SourceRecord
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
 case class IdBasedDataFetcher(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
                               incrementingVariableName: String, var incrementingOffset: Long, incrementingFieldName: String,
                               topic: String, keyFieldOpt: Option[String]) extends DataFetcher {
 
-  override protected def createPreparedStatement(connection: Connection): PreparedStatement = {
+  override protected def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = connection.prepareStatement(
       s"EXECUTE $storedProcedureName @$incrementingVariableName = ?, @$batchSizeVariableName = ?"
     )
@@ -25,32 +26,33 @@ case class IdBasedDataFetcher(storedProcedureName: String, batchSize: Int, batch
     preparedStatement
   }
 
-  override protected def extractRecords(resultSet: ResultSet, schema: Schema): ListBuffer[SourceRecord] = {
+  override protected def extractRecords(resultSet: ResultSet, schema: Schema): Try[Seq[SourceRecord]] = Try {
     val sourceRecords = ListBuffer.empty[SourceRecord]
     val idSchemaType = schema.field(incrementingFieldName).schema.`type`()
     var max = incrementingOffset
     while(resultSet.next()) {
-      val data = DataConverter.convertRecord(schema, resultSet)
-      val id = idSchemaType match {
-        case Type.INT8  => data.getInt8(incrementingFieldName).toLong
-        case Type.INT16 => data.getInt16(incrementingFieldName).toLong
-        case Type.INT32 => data.getInt32(incrementingFieldName).toLong
-        case Type.INT64 => data.getInt64(incrementingFieldName).toLong
-        case _          => throw new IOException("Id field is not of type INT")
-      }
-      max = if (id > max) id else max
+      DataConverter.convertRecord(schema, resultSet).map { record =>
+        val id = idSchemaType match {
+          case Type.INT8  => record.getInt8(incrementingFieldName).toLong
+          case Type.INT16 => record.getInt16(incrementingFieldName).toLong
+          case Type.INT32 => record.getInt32(incrementingFieldName).toLong
+          case Type.INT64 => record.getInt64(incrementingFieldName).toLong
+          case _          => throw new IOException("Id field is not of type INT")
+        }
+        max = if (id > max) id else max
 
-      keyFieldOpt match {
-        case Some(keyField) =>
-          sourceRecords += new SourceRecord(
-            Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(IncrementingMode.entryName -> id).asJava, topic, null, schema, data.get(keyField), schema, data
-          )
-        case None           =>
-          sourceRecords += new SourceRecord(
-            Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(IncrementingMode.entryName -> id).asJava, topic, schema, data
-          )
+        keyFieldOpt match {
+          case Some(keyField) =>
+            sourceRecords += new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+              Map(IncrementingMode.entryName -> id).asJava, topic, null, schema, record.get(keyField), schema, record
+            )
+          case None           =>
+            sourceRecords += new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+              Map(IncrementingMode.entryName -> id).asJava, topic, schema, record
+            )
+        }
       }
     }
     incrementingOffset = max

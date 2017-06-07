@@ -14,22 +14,17 @@ object DataConverter {
   private val logger = LoggerFactory.getLogger(classOf[JdbcSourceTask])
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
-  def convertSchema(storedProcedureName: String, metadata: ResultSetMetaData): Schema = {
+  def convertSchema(storedProcedureName: String, metadata: ResultSetMetaData): Try[Schema] = Try {
     val builder = SchemaBuilder.struct.name(storedProcedureName)
     (1 to metadata.getColumnCount).foreach(i => addFieldSchema(metadata, i, builder))
     builder.build
   }
 
-  def convertRecord(schema: Schema, resultSet: ResultSet): Struct = {
+  def convertRecord(schema: Schema, resultSet: ResultSet): Try[Struct] = Try {
     val metadata = resultSet.getMetaData
     val struct = new Struct(schema)
     (1 to metadata.getColumnCount).foreach { i =>
-      Try(convertFieldValue(resultSet, i, metadata.getColumnType(i), struct, metadata.getColumnLabel(i))) match {
-        case Success(_)               =>
-        case Failure(e: IOException)  => logger.warn("Ignoring record because processing failed:", e)
-        case Failure(e: SQLException) => logger.warn("Ignoring record due to SQL error:", e)
-        case Failure(e)               => logger.warn("Ignoring record due to error", e)
-      }
+      convertFieldValue(resultSet, i, metadata.getColumnType(i), struct, metadata.getColumnLabel(i))
     }
     struct
   }
@@ -103,7 +98,7 @@ object DataConverter {
         if (optional) tsSchemaBuilder.optional
         builder.field(fieldName, tsSchemaBuilder.build)
 
-      case Types.ARRAY | Types.OTHER | Types.DISTINCT | Types.STRUCT | Types.REF | Types.ROWID | _ =>
+      case _ =>
         logger.warn("JDBC type {} not currently supported", sqlType)
     }
   }
@@ -114,9 +109,7 @@ object DataConverter {
 
       case Types.BOOLEAN => resultSet.getBoolean(col)
 
-      case Types.BIT => resultSet.getByte(col)
-
-      case Types.TINYINT => resultSet.getByte(col)
+      case Types.BIT | Types.TINYINT => resultSet.getByte(col)
 
       case Types.SMALLINT => resultSet.getShort(col)
 
@@ -134,17 +127,24 @@ object DataConverter {
 
       case Types.NCHAR | Types.NVARCHAR | Types.LONGNVARCHAR => resultSet.getNString(col)
 
-      case Types.BINARY | Types.VARBINARY | Types.LONGVARBINARY => resultSet.getBytes(col)
-
-      case Types.DATE => resultSet.getDate(col, UTC_CALENDAR)
-
-      case Types.TIME => resultSet.getTime(col, UTC_CALENDAR)
-
-      case Types.TIMESTAMP => resultSet.getTimestamp(col, UTC_CALENDAR)
+      case Types.CLOB | Types.NCLOB =>
+        val clob = if (colType == Types.CLOB) resultSet.getClob(col) else resultSet.getNClob(col)
+        val bytes =
+          if(clob == null) null
+          else if(clob.length > Integer.MAX_VALUE) throw new IOException("Can't process CLOBs longer than Integer.MAX_VALUE")
+          else clob.getSubString(1, clob.length.toInt)
+        clob.free()
+        bytes
 
       case Types.DATALINK =>
         val url = resultSet.getURL(col)
         if (url != null) url.toString else null
+
+      case Types.SQLXML =>
+        val xml = resultSet.getSQLXML(col)
+        if (xml != null) xml.getString else null
+
+      case Types.BINARY | Types.VARBINARY | Types.LONGVARBINARY => resultSet.getBytes(col)
 
       case Types.BLOB =>
         val blob = resultSet.getBlob(col)
@@ -155,20 +155,13 @@ object DataConverter {
         blob.free()
         bytes
 
-      case Types.CLOB | Types.NCLOB =>
-        val clob = if (colType == Types.CLOB) resultSet.getClob(col) else resultSet.getNClob(col)
-        val bytes =
-          if(clob == null) null
-          else if(clob.length > Integer.MAX_VALUE) throw new IOException("Can't process CLOBs longer than Integer.MAX_VALUE")
-          else clob.getSubString(1, clob.length.toInt)
-        clob.free()
-        bytes
+      case Types.DATE => resultSet.getDate(col, UTC_CALENDAR)
 
-      case Types.SQLXML =>
-        val xml = resultSet.getSQLXML(col)
-        if (xml != null) xml.getString else null
+      case Types.TIME => resultSet.getTime(col, UTC_CALENDAR)
 
-      case Types.ARRAY | Types.OTHER | Types.DISTINCT | Types.STRUCT | Types.REF | Types.ROWID | _ => null
+      case Types.TIMESTAMP => resultSet.getTimestamp(col, UTC_CALENDAR)
+
+      case _ => null
     }
 
     struct.put(fieldName, if (resultSet.wasNull) null else colValue)

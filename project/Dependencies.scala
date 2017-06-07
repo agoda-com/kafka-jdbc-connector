@@ -15,8 +15,10 @@ object Dependencies {
   private val ScalaTest        = "org.scalatest"              %% "scalatest"            % ScalaTestV   % "test"
 
   object Compile {
-    def kafkaJdbcConnector  = Seq(KafkaConnectApi, MysqlDriver, MssqlDriver, SqliteDriver, PostgresqlDriver,
-      Enumeratum, ScalaLogging)
+    def kafkaJdbcConnector  = Seq(
+      KafkaConnectApi, MysqlDriver, MssqlDriver, SqliteDriver,
+      PostgresqlDriver, Enumeratum, ScalaLogging
+    )
   }
 
   object Test {

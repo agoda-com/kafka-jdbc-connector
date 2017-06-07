@@ -93,7 +93,7 @@ class JdbcSourceTask extends SourceTask {
     logger.info("Polling for new data")
     val pollInterval = config.getPollInterval
     val startTime    = System.currentTimeMillis
-    val fetchedRecords = Try(dataFetcher.getRecords(db, pollInterval.millis)) match {
+    val fetchedRecords = dataFetcher.getRecords(db, pollInterval.millis) match {
       case Success(records)                    => if(records.isEmpty) logger.info(s"No updates for $dataFetcher")
                                                   else logger.info(s"Returning ${records.size} records for $dataFetcher")
                                                   records

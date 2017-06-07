@@ -11,34 +11,23 @@ import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 trait DataFetcher {
-  private val logger = LoggerFactory.getLogger(this.getClass)
 
   def storedProcedureName: String
 
-  def getRecords(connection: Connection, timeout: Duration): Seq[SourceRecord] = {
-    val preparedStatement = createPreparedStatement(connection)
-
-    val resultSet = Try(executeStoredProcedure(preparedStatement, timeout)) match {
-      case Success(r) => r
-      case Failure(e) => logger.error(e.getMessage, e); throw e
-    }
-
-    val schema = Try(DataConverter.convertSchema(storedProcedureName, resultSet.getMetaData)) match {
-      case Success(s) => s
-      case Failure(e) => logger.error(e.getMessage, e); throw e
-    }
-
-    Try(extractRecords(resultSet, schema)) match {
-      case Success(r) => r
-      case Failure(e) => logger.error(e.getMessage, e); throw e
-    }
+  def getRecords(connection: Connection, timeout: Duration): Try[Seq[SourceRecord]] = {
+    for {
+      preparedStatement <- createPreparedStatement(connection)
+      resultSet         <- executeStoredProcedure(preparedStatement, timeout)
+      schema            <- DataConverter.convertSchema(storedProcedureName, resultSet.getMetaData)
+      records           <- extractRecords(resultSet, schema)
+    } yield records
   }
 
-  protected def createPreparedStatement(connection: Connection): PreparedStatement
+  protected def createPreparedStatement(connection: Connection): Try[PreparedStatement]
 
-  protected def extractRecords(resultSet: ResultSet, schema: Schema): Seq[SourceRecord]
+  protected def extractRecords(resultSet: ResultSet, schema: Schema): Try[Seq[SourceRecord]]
 
-  private def executeStoredProcedure(preparedStatement: PreparedStatement, timeout: Duration): ResultSet = {
+  private def executeStoredProcedure(preparedStatement: PreparedStatement, timeout: Duration): Try[ResultSet] = Try {
     preparedStatement.setQueryTimeout(timeout.toSeconds.toInt)
     preparedStatement.executeQuery
   }

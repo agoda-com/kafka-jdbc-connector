@@ -10,6 +10,7 @@ import org.apache.kafka.connect.source.SourceRecord
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
 case class TimeBasedDataFetcher(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
                                 timestampVariableName: String, var timestampOffset: Long, timestampFieldName: String,
@@ -17,7 +18,7 @@ case class TimeBasedDataFetcher(storedProcedureName: String, batchSize: Int, bat
 
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
-  override protected def createPreparedStatement(connection: Connection): PreparedStatement = {
+  override protected def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = connection.prepareStatement(
       s"EXECUTE $storedProcedureName @$timestampVariableName = ?, @$batchSizeVariableName = ?"
     )
@@ -26,24 +27,25 @@ case class TimeBasedDataFetcher(storedProcedureName: String, batchSize: Int, bat
     preparedStatement
   }
 
-  override protected def extractRecords(resultSet: ResultSet, schema: Schema): Seq[SourceRecord] = {
+  override protected def extractRecords(resultSet: ResultSet, schema: Schema): Try[Seq[SourceRecord]] = Try {
     val sourceRecords = ListBuffer.empty[SourceRecord]
     var max = timestampOffset
     while (resultSet.next()) {
-      val data = DataConverter.convertRecord(schema, resultSet)
-      val time = data.get(timestampFieldName).asInstanceOf[Date].getTime
-      max = if(time > max) time else max
-      keyFieldOpt match {
-        case Some(keyField) =>
-          sourceRecords += new SourceRecord(
-            Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(TimestampMode.entryName -> time).asJava, topic, null, schema, data.get(keyField), schema, data
-          )
-        case None           =>
-          sourceRecords += new SourceRecord(
-            Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(TimestampMode.entryName -> time).asJava, topic, schema, data
-          )
+      DataConverter.convertRecord(schema, resultSet) map { record =>
+        val time = record.get(timestampFieldName).asInstanceOf[Date].getTime
+        max = if(time > max) time else max
+        keyFieldOpt match {
+          case Some(keyField) =>
+            sourceRecords += new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+              Map(TimestampMode.entryName -> time).asJava, topic, null, schema, record.get(keyField), schema, record
+            )
+          case None           =>
+            sourceRecords += new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+              Map(TimestampMode.entryName -> time).asJava, topic, schema, record
+            )
+        }
       }
     }
     timestampOffset = max

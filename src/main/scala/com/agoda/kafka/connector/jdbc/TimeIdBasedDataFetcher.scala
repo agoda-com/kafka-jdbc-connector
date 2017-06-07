@@ -12,6 +12,7 @@ import org.apache.kafka.connect.source.SourceRecord
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
 case class TimeIdBasedDataFetcher(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
                                   timestampVariableName: String, var timestampOffset: Long,
@@ -21,7 +22,7 @@ case class TimeIdBasedDataFetcher(storedProcedureName: String, batchSize: Int, b
 
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
-  override def createPreparedStatement(connection: Connection): PreparedStatement = {
+  override def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = connection.prepareStatement(
       s"EXECUTE $storedProcedureName @$timestampVariableName = ?, @$incrementingVariableName = ?, @$batchSizeVariableName = ?"
     )
@@ -31,37 +32,38 @@ case class TimeIdBasedDataFetcher(storedProcedureName: String, batchSize: Int, b
     preparedStatement
   }
 
-  override def extractRecords(resultSet: ResultSet, schema: Schema): Seq[SourceRecord] = {
+  override def extractRecords(resultSet: ResultSet, schema: Schema): Try[Seq[SourceRecord]] = Try {
     val sourceRecords = ListBuffer.empty[SourceRecord]
     var maxTime = timestampOffset
-    val idSchemaType = schema.field(incrementingFieldName).schema.`type`()
     var maxId = incrementingOffset
+    val idSchemaType = schema.field(incrementingFieldName).schema.`type`()
     while (resultSet.next()) {
-      val data = DataConverter.convertRecord(schema, resultSet)
-      val time = data.get(timestampFieldName).asInstanceOf[Date].getTime
-      maxTime = if(time > maxTime) time else maxTime
-      val id = idSchemaType match {
-        case Type.INT8  => data.getInt8(incrementingFieldName).toLong
-        case Type.INT16 => data.getInt16(incrementingFieldName).toLong
-        case Type.INT32 => data.getInt32(incrementingFieldName).toLong
-        case Type.INT64 => data.getInt64(incrementingFieldName).toLong
-        case _          => throw new IOException("Id field is not of type INT")
-      }
-      maxId = if (id > maxId) id else maxId
+      DataConverter.convertRecord(schema, resultSet) map { record =>
+        val time = record.get(timestampFieldName).asInstanceOf[Date].getTime
+        maxTime = if(time > maxTime) time else maxTime
+        val id = idSchemaType match {
+          case Type.INT8  => record.getInt8(incrementingFieldName).toLong
+          case Type.INT16 => record.getInt16(incrementingFieldName).toLong
+          case Type.INT32 => record.getInt32(incrementingFieldName).toLong
+          case Type.INT64 => record.getInt64(incrementingFieldName).toLong
+          case _          => throw new IOException("Id field is not of type INT")
+        }
+        maxId = if (id > maxId) id else maxId
 
-      keyFieldOpt match {
-        case Some(keyField) =>
-          sourceRecords += new SourceRecord(
-            Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
-            topic, null, schema, data.get(keyField), schema, data
-          )
-        case None           =>
-          sourceRecords += new SourceRecord(
-            Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-            Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
-            topic, schema, data
-          )
+        keyFieldOpt match {
+          case Some(keyField) =>
+            sourceRecords += new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+              Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
+              topic, null, schema, record.get(keyField), schema, record
+            )
+          case None           =>
+            sourceRecords += new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+              Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
+              topic, schema, record
+            )
+        }
       }
     }
     timestampOffset = maxTime
