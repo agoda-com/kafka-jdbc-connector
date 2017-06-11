@@ -38,9 +38,6 @@ object DataConverter {
                     metadata.isNullable(col) == ResultSetMetaData.columnNullableUnknown
 
     sqlType match {
-      case Types.NULL     =>
-        logger.warn("JDBC type {} not currently supported", sqlType)
-
       case Types.BOOLEAN  =>
         if (optional) builder.field(fieldName, Schema.OPTIONAL_BOOLEAN_SCHEMA)
         else builder.field(fieldName, Schema.BOOLEAN_SCHEMA)
@@ -105,8 +102,6 @@ object DataConverter {
 
   private def convertFieldValue(resultSet: ResultSet, col: Int, colType: Int, struct: Struct, fieldName: String) = {
     val colValue = colType match {
-      case Types.NULL => null
-
       case Types.BOOLEAN => resultSet.getBoolean(col)
 
       case Types.BIT | Types.TINYINT => resultSet.getByte(col)
