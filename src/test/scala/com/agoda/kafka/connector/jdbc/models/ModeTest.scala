@@ -1,6 +1,6 @@
 package com.agoda.kafka.connector.jdbc.models
 
-import Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
+import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
 import org.scalatest.{Matchers, WordSpec}
 
 class ModeTest extends WordSpec with Matchers {

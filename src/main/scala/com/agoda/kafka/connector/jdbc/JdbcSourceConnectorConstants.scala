@@ -3,6 +3,7 @@ package com.agoda.kafka.connector.jdbc
 import java.sql.Timestamp
 
 object JdbcSourceConnectorConstants {
+
   val STORED_PROCEDURE_NAME_KEY           = "stored-procedure.name"
 
   val CONNECTION_URL_CONFIG               = "connection.url"

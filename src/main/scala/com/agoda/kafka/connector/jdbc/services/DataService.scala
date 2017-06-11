@@ -1,16 +1,15 @@
-package com.agoda.kafka.connector.jdbc
+package com.agoda.kafka.connector.jdbc.services
 
 import java.sql.{Connection, PreparedStatement, ResultSet}
 
 import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.source.SourceRecord
-import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
-trait DataFetcher {
+trait DataService {
 
   def storedProcedureName: String
 

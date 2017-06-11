@@ -5,6 +5,7 @@ import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
+import com.agoda.kafka.connector.jdbc.services.{DataService, IdBasedDataService, TimeBasedDataService, TimeIdBasedDataService}
 import com.agoda.kafka.connector.jdbc.utils.Version
 import org.apache.kafka.connect.errors.ConnectException
 import org.apache.kafka.connect.source.{SourceRecord, SourceTask}
@@ -19,7 +20,7 @@ class JdbcSourceTask extends SourceTask {
 
   private var config: JdbcSourceTaskConfig  = _
   private var db: Connection                = _
-  private var dataFetcher: DataFetcher      = _
+  private var dataService: DataService      = _
   private var running: AtomicBoolean        = _
 
   override def version(): String = Version.getVersion
@@ -57,18 +58,18 @@ class JdbcSourceTask extends SourceTask {
     config.getMode match {
       case TimestampMode =>
         val timestampOffset = Try(offset.get(TimestampMode.entryName)).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
-        dataFetcher = TimeBasedDataFetcher(storedProcedureName, batchSize, batchSizeVariableName,
+        dataService = TimeBasedDataService(storedProcedureName, batchSize, batchSizeVariableName,
             timestampVariableNameOpt.get, timestampOffset, timestampFieldNameOpt.get, topic, keyFieldOpt)
 
       case IncrementingMode =>
         val incrementingOffset = Try(offset.get(IncrementingMode.entryName)).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
-        dataFetcher = IdBasedDataFetcher(storedProcedureName, batchSize, batchSizeVariableName,
+        dataService = IdBasedDataService(storedProcedureName, batchSize, batchSizeVariableName,
             incrementingVariableNameOpt.get, incrementingOffset, incrementingFieldNameOpt.get, topic, keyFieldOpt)
 
       case TimestampIncrementingMode =>
         val timestampOffset    = Try(offset.get(TimestampMode.entryName)).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
         val incrementingOffset = Try(offset.get(IncrementingMode.entryName)).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
-        dataFetcher = TimeIdBasedDataFetcher(storedProcedureName, batchSize, batchSizeVariableName,
+        dataService = TimeIdBasedDataService(storedProcedureName, batchSize, batchSizeVariableName,
             timestampVariableNameOpt.get, timestampOffset, incrementingVariableNameOpt.get, incrementingOffset,
             timestampFieldNameOpt.get, incrementingFieldNameOpt.get, topic, keyFieldOpt)
     }
@@ -90,16 +91,16 @@ class JdbcSourceTask extends SourceTask {
   override def poll(): util.List[SourceRecord] = this.synchronized { if(running.get) fetchRecords else null }
 
   private def fetchRecords: util.List[SourceRecord] = {
-    logger.info("Polling for new data")
+    logger.debug("Polling new data ...")
     val pollInterval = config.getPollInterval
     val startTime    = System.currentTimeMillis
-    val fetchedRecords = dataFetcher.getRecords(db, pollInterval.millis) match {
-      case Success(records)                    => if(records.isEmpty) logger.info(s"No updates for $dataFetcher")
-                                                  else logger.info(s"Returning ${records.size} records for $dataFetcher")
+    val fetchedRecords = dataService.getRecords(db, pollInterval.millis) match {
+      case Success(records)                    => if(records.isEmpty) logger.info(s"No updates for $dataService")
+                                                  else logger.info(s"Returning ${records.size} records for $dataService")
                                                   records
-      case Failure(e: SQLException)            => logger.error(s"Failed to fetch data for ${dataFetcher.toString}: ", e)
+      case Failure(e: SQLException)            => logger.error(s"Failed to fetch data for $dataService: ", e)
                                                   Seq.empty[SourceRecord]
-      case Failure(e: Throwable)               => logger.error(s"Failed to fetch data for ${dataFetcher.toString}: ", e)
+      case Failure(e: Throwable)               => logger.error(s"Failed to fetch data for $dataService: ", e)
                                                   Seq.empty[SourceRecord]
     }
     val endTime     = System.currentTimeMillis

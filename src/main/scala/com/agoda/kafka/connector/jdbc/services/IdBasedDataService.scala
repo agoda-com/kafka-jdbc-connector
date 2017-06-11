@@ -1,8 +1,9 @@
-package com.agoda.kafka.connector.jdbc
+package com.agoda.kafka.connector.jdbc.services
 
 import java.io.IOException
 import java.sql.{Connection, PreparedStatement, ResultSet}
 
+import com.agoda.kafka.connector.jdbc.JdbcSourceConnectorConstants
 import com.agoda.kafka.connector.jdbc.models.Mode.IncrementingMode
 import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
@@ -13,9 +14,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
-case class IdBasedDataFetcher(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
+case class IdBasedDataService(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
                               incrementingVariableName: String, var incrementingOffset: Long, incrementingFieldName: String,
-                              topic: String, keyFieldOpt: Option[String]) extends DataFetcher {
+                              topic: String, keyFieldOpt: Option[String]) extends DataService {
 
   override protected def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = connection.prepareStatement(
