@@ -20,3 +20,9 @@ lazy val `kafka-jdbc-connector` =
       test in assembly := {},
       assemblyJarName in assembly := s"kafka-jdbc-connector-${version.value}.jar"
     )
+    .settings(
+      coverageExcludedPackages := Seq(
+        "com.agoda.BuildInfo",
+        "com.agoda.kafka.connector.jdbc.utils.Version"
+      ).mkString(";")
+    )

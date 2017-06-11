@@ -7,26 +7,56 @@ class JdbcSourceConnectorConfigTest extends WordSpec with Matchers {
 
   "JDBC Source Connector Config" should {
 
-    "should create JDBC source configuration for timestamp mode" in {
+    "throw exception if any mandatory configuration is missing" in {
+      val properties = Map(connectionUrlProperty, incrementingModeProperty, topicProperty,
+        pollIntervalProperty, batchVariableNameProperty, incrementingVariableNameConfig, incrementingFieldNameConfig)
+
+      the [IllegalArgumentException] thrownBy new JdbcSourceConnectorConfig(properties).getClass
+    }
+
+    "create JDBC source configuration for incrementing mode" in {
       val properties = Map(connectionUrlProperty, incrementingModeProperty, storedProcedureProperty, topicProperty,
         pollIntervalProperty, batchVariableNameProperty, incrementingVariableNameConfig, incrementingFieldNameConfig)
 
       new JdbcSourceConnectorConfig(properties).getClass shouldEqual classOf[JdbcSourceConnectorConfig]
     }
 
-    "should create JDBC source configuration for incrementing mode" in {
+    "throw exception if any configuration for incrementing mode is missing" in {
+      val properties = Map(connectionUrlProperty, incrementingModeProperty, storedProcedureProperty, topicProperty,
+        pollIntervalProperty, batchVariableNameProperty, incrementingVariableNameConfig)
+
+      the [IllegalArgumentException] thrownBy new JdbcSourceConnectorConfig(properties).getClass
+    }
+
+    "create JDBC source configuration for timestamp mode" in {
       val properties = Map(connectionUrlProperty, timestampModeProperty, storedProcedureProperty, topicProperty,
         pollIntervalProperty, batchVariableNameProperty, timestampVariableNameConfig, timestampFieldNameConfig)
 
       new JdbcSourceConnectorConfig(properties).getClass shouldEqual classOf[JdbcSourceConnectorConfig]
     }
 
-    "should create JDBC source configuration for timestamp+incrementing mode" in {
+
+    "throw exception if any configuration for timestamp mode is missing" in {
+      val properties = Map(connectionUrlProperty, timestampModeProperty, storedProcedureProperty, topicProperty,
+        pollIntervalProperty, batchVariableNameProperty, timestampFieldNameConfig)
+
+      the [IllegalArgumentException] thrownBy new JdbcSourceConnectorConfig(properties).getClass
+    }
+
+    "create JDBC source configuration for timestamp+incrementing mode" in {
       val properties = Map(connectionUrlProperty, timestampIncrementingModeProperty, storedProcedureProperty,
         topicProperty, pollIntervalProperty, batchVariableNameProperty, timestampVariableNameConfig, timestampFieldNameConfig,
         incrementingVariableNameConfig, incrementingFieldNameConfig)
 
       new JdbcSourceConnectorConfig(properties).getClass shouldEqual classOf[JdbcSourceConnectorConfig]
+    }
+
+    "throw exception if any configuration for timestamp+incrementing mode is missing" in {
+      val properties = Map(connectionUrlProperty, timestampIncrementingModeProperty, storedProcedureProperty,
+        topicProperty, pollIntervalProperty, batchVariableNameProperty, timestampFieldNameConfig,
+        incrementingVariableNameConfig)
+
+      the [IllegalArgumentException] thrownBy new JdbcSourceConnectorConfig(properties).getClass
     }
   }
 }
