@@ -14,9 +14,25 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
-case class IdBasedDataService(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
-                              incrementingVariableName: String, var incrementingOffset: Long, incrementingFieldName: String,
-                              topic: String, keyFieldOpt: Option[String]) extends DataService {
+/**
+  * @constructor
+  * @param storedProcedureName name of the stored procedure
+  * @param batchSize number of records returned in each batch
+  * @param batchSizeVariableName name of the batch size variable in stored procedure
+  * @param incrementingVariableName name of the incrementing offset variable in stored procedure
+  * @param incrementingOffset value of current incrementing offset
+  * @param incrementingFieldName incrementing offset field name in returned records
+  * @param topic name of kafka topic where records are stored
+  * @param keyFieldOpt optional key field name in returned records
+  */
+case class IdBasedDataService(storedProcedureName: String,
+                              batchSize: Int,
+                              batchSizeVariableName: String,
+                              incrementingVariableName: String,
+                              var incrementingOffset: Long,
+                              incrementingFieldName: String,
+                              topic: String,
+                              keyFieldOpt: Option[String]) extends DataService {
 
   override protected def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = connection.prepareStatement(

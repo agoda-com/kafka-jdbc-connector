@@ -25,6 +25,11 @@ class JdbcSourceTask extends SourceTask {
 
   override def version(): String = Version.getVersion
 
+/**
+  * invoked by kafka-connect runtime to start this task
+  *
+  * @param props properties required to start this task
+  */
   override def start(props: util.Map[String, String]): Unit = {
     Try(new JdbcSourceTaskConfig(props.asScala.toMap)) match {
       case Success(c) => config = c
@@ -77,6 +82,9 @@ class JdbcSourceTask extends SourceTask {
     running = new AtomicBoolean(true)
   }
 
+/**
+  * invoked by kafka-connect runtime to stop this task
+  */
   override def stop(): Unit = {
     if (running != null) running.set(false)
     if (db != null) {
@@ -88,6 +96,9 @@ class JdbcSourceTask extends SourceTask {
     }
   }
 
+/**
+  * invoked by kafka-connect runtime to poll data in [[JdbcSourceConnectorConstants.POLL_INTERVAL_MS_CONFIG]] interval
+  */
   override def poll(): util.List[SourceRecord] = this.synchronized { if(running.get) fetchRecords else null }
 
   private def fetchRecords: util.List[SourceRecord] = {

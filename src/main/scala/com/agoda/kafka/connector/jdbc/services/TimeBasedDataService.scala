@@ -13,9 +13,25 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
-case class TimeBasedDataService(storedProcedureName: String, batchSize: Int, batchSizeVariableName: String,
-                                timestampVariableName: String, var timestampOffset: Long, timestampFieldName: String,
-                                topic: String, keyFieldOpt: Option[String]) extends DataService {
+/**
+  * @constructor
+  * @param storedProcedureName name of the stored procedure
+  * @param batchSize number of records returned in each batch
+  * @param batchSizeVariableName name of the batch size variable in stored procedure
+  * @param timestampVariableName name of the timestamp offset variable in stored procedure
+  * @param timestampOffset value of current timestamp offset
+  * @param timestampFieldName timestamp offset field name in returned records
+  * @param topic name of kafka topic where records are stored
+  * @param keyFieldOpt optional key field name in returned records
+  */
+case class TimeBasedDataService(storedProcedureName: String,
+                                batchSize: Int,
+                                batchSizeVariableName: String,
+                                timestampVariableName: String,
+                                var timestampOffset: Long,
+                                timestampFieldName: String,
+                                topic: String,
+                                keyFieldOpt: Option[String]) extends DataService {
 
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 

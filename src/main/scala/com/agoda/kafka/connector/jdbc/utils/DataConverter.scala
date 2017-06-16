@@ -14,12 +14,26 @@ object DataConverter {
   private val logger = LoggerFactory.getLogger(classOf[JdbcSourceTask])
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
+/**
+  * Create schema from result set returned by stored procedure
+  *
+  * @param storedProcedureName name of the stored procedure, used as schema name
+  * @param metadata metadata of result set returned by the stored procedure
+  * @return Success(Schema) if schema is created successfully else Failure(Throwable)
+  */
   def convertSchema(storedProcedureName: String, metadata: ResultSetMetaData): Try[Schema] = Try {
     val builder = SchemaBuilder.struct.name(storedProcedureName)
     (1 to metadata.getColumnCount).foreach(i => addFieldSchema(metadata, i, builder))
     builder.build
   }
 
+/**
+  * Convert result set row into structured object
+  *
+  * @param schema schema created from result set metadata
+  * @param resultSet result set returned by the stored procedure
+  * @return Success(Struct) if structured object is created successfully else Failure(Throwable)
+  */
   def convertRecord(schema: Schema, resultSet: ResultSet): Try[Struct] = Try {
     val metadata = resultSet.getMetaData
     val struct = new Struct(schema)

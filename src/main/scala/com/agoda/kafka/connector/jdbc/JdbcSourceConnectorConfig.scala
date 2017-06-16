@@ -6,6 +6,10 @@ import com.agoda.kafka.connector.jdbc.JdbcSourceConnectorConstants._
 import com.agoda.kafka.connector.jdbc.models.Mode
 import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
 
+/**
+  * @constructor
+  * @param properties is set of configurations required to create JdbcSourceConnectorConfig
+  */
 class JdbcSourceConnectorConfig(val properties: Map[String, String]) {
 
   require(
@@ -48,34 +52,76 @@ class JdbcSourceConnectorConfig(val properties: Map[String, String]) {
     }
   )
 
+/**
+  * @return database connection url
+  */
   def getConnectionUrl: String = properties(CONNECTION_URL_CONFIG)
 
+/**
+  * @return mode of operation [[Mode.IncrementingMode]], [[Mode.TimestampMode]], [[Mode.TimestampIncrementingMode]]
+  */
   def getMode: Mode = Mode.withName(properties(MODE_CONFIG))
 
+/**
+  * @return stored procedure name
+  */
   def getStoredProcedureName: String = properties(STORED_PROCEDURE_NAME_CONFIG)
 
+/**
+  * @return kafka topic name
+  */
   def getTopic: String = properties(TOPIC_CONFIG)
 
+/**
+  * @return database poll interval
+  */
   def getPollInterval: Long = properties.getOrElse(POLL_INTERVAL_MS_CONFIG, POLL_INTERVAL_MS_DEFAULT).toLong
 
+/**
+  * @return number of records fetched in each poll
+  */
   def getMaxBatchSize: Int = properties.getOrElse(BATCH_MAX_ROWS_CONFIG, BATCH_MAX_ROWS_DEFAULT).toInt
 
+/**
+  * @return batch size variable name in stored procedure
+  */
   def getMaxBatchSizeVariableName: String = properties(BATCH_MAX_ROWS_VARIABLE_NAME_CONFIG)
 
+/**
+  * @return timestamp offset variable name in stored procedure
+  */
   def getTimestampVariableName: Option[String] = properties.get(TIMESTAMP_VARIABLE_NAME_CONFIG)
 
+/**
+  * @return timestamp offset field name in record
+  */
   def getTimestampFieldName: Option[String] = properties.get(TIMESTAMP_FIELD_NAME_CONFIG)
 
+/**
+  * @return incrementing offset variable name in stored procedure
+  */
   def getIncrementingVariableName: Option[String] = properties.get(INCREMENTING_VARIABLE_NAME_CONFIG)
 
+/**
+  * @return incrementing offset field name in record
+  */
   def getIncrementingFieldName: Option[String] = properties.get(INCREMENTING_FIELD_NAME_CONFIG)
 
+/**
+  * @return initial timestamp offset
+  */
   def getTimestampOffset: Long = {
     val maybeTimestamp = properties.get(TIMESTAMP_OFFSET_CONFIG).map(o => Timestamp.valueOf(o))
     maybeTimestamp.getOrElse(TIMESTAMP_OFFSET_DEFAULT).getTime
   }
 
+/**
+  * @return initial incrementing offset
+  */
   def getIncrementingOffset: Long = properties.getOrElse(INCREMENTING_OFFSET_CONFIG, INCREMENTING_OFFSET_DEFAULT).toLong
 
+/**
+  * @return optional field name to be used as kafka message key
+  */
   def getKeyField: Option[String] = properties.get(KEY_FIELD_NAME_CONFIG)
 }

@@ -11,8 +11,18 @@ import scala.util.Try
 
 trait DataService {
 
+/**
+  * @return name of the stored procedure
+  */
   def storedProcedureName: String
 
+/**
+  * Fetch records from database
+  *
+  * @param connection database connection
+  * @param timeout query timeout
+  * @return Success(Seq(SourceRecord)) if records are processed successfully else Failure(Throwable)
+  */
   def getRecords(connection: Connection, timeout: Duration): Try[Seq[SourceRecord]] = {
     for {
       preparedStatement <- createPreparedStatement(connection)
