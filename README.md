@@ -9,7 +9,7 @@ Kafka JDBC Connector
 *Simple way to copy data from relational databases into kafka.*
 
 TODOs
-* Publish artifact in maven
+* How to use
 * Change logs
 * Performance comparison
 * Contribution guidelines
