@@ -58,7 +58,7 @@ class JdbcSourceConnectorConfig(val properties: Map[String, String]) {
   def getConnectionUrl: String = properties(CONNECTION_URL_CONFIG)
 
 /**
-  * @return mode of operation [[Mode.IncrementingMode]], [[Mode.TimestampMode]], [[Mode.TimestampIncrementingMode]]
+  * @return mode of operation [[IncrementingMode]], [[TimestampMode]], [[TimestampIncrementingMode]]
   */
   def getMode: Mode = Mode.withName(properties(MODE_CONFIG))
 
