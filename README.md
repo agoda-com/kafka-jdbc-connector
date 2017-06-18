@@ -58,13 +58,90 @@ Post the following configutation to Kafka Connect rest interface
 }
 ```
 
+### Incrementing mode
+
+Create a stored procedure in MSSQL database
+
+```
+create procedure [dbo].[cdc_table]
+	@id int,
+	@batch int
+as
+begin
+   select top (@batch) *
+   from        cdc.table_ct
+   where       auto_incrementing_id > @id
+   order by    auto_incrementing_id asc
+end
+```
+
+Post the following configutation to Kafka Connect rest interface
+
+```
+{
+	"name" : "cdc_incrementing",
+	"config" : {
+		"tasks.max": "1",
+		"connector.class": "com.agoda.kafka.connector.jdbc.JdbcSourceConnector",
+		"connection.url" : "jdbc:sqlserver://localhost:1433;user=sa;password=Passw0rd",
+		"mode" : "incrementing",
+		"stored-procedure.name" : "cdc_table",
+		"topic" : "cdc-table-changelogs",
+		"batch.max.rows.variable.name" : "batch",
+		"incrementing.variable.name" : "id",
+		"incrementing.field.name" : "auto_incrementing_id"
+	}
+}
+```
+
+### Timestamp + Incrementing mode
+
+Create a stored procedure in MSSQL database
+
+```
+create procedure [dbo].[cdc_table]
+	@time datetime,
+	@id int,
+	@batch int
+as
+begin
+   select top (@batch) *
+   from        cdc.table_ct as a
+   left join   cdc.lsn_time_mapping as b
+   on          a._$start_lsn = b.start_lsn
+   where       b.tran_end_time > @time
+   and         a.auto_incrementing_id > @id
+   order by    b.tran_end_time, a.auto_incrementing_id asc
+end
+```
+
+Post the following configutation to Kafka Connect rest interface
+
+```
+{
+	"name" : "cdc_timestamp_incrementing",
+	"config" : {
+		"tasks.max": "1",
+		"connector.class": "com.agoda.kafka.connector.jdbc.JdbcSourceConnector",
+		"connection.url" : "jdbc:sqlserver://localhost:1433;user=sa;password=Passw0rd",
+		"mode" : "timestamp+incrementing",
+		"stored-procedure.name" : "cdc_table",
+		"topic" : "cdc-table-changelogs",
+		"batch.max.rows.variable.name" : "batch",
+		"timestamp.variable.name" : "time",
+		"timestamp.field.name" : "tran_end_time",
+		"incrementing.variable.name" : "id",
+		"incrementing.field.name" : "auto_incrementing_id"
+	}
+}
+```
+
 License
 -------
 
 Kafka JDBC Connector is Open Source and available under the [MIT License](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/LICENSE.txt).
 
 TODOs
-* How to use
 * Change logs
 * Performance comparison
 * Contribution guidelines
