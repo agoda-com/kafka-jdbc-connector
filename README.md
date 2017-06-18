@@ -158,4 +158,3 @@ Kafka JDBC Connector is Open Source and available under the [MIT License](https:
 TODOs
 * Change logs
 * Performance comparison
-* Contribution guidelines
