@@ -17,6 +17,47 @@ build.sbt
 libraryDependencies ++= Seq("com.agoda" %% "kafka-jdbc-connector" % "0.9.0.0")
 ```
 
+Examples
+--------
+
+### Timestamp mode
+
+Create a stored procedure in MSSQL database
+
+```sql
+create procedure [dbo].[cdc_table]
+	@time datetime,
+	@batch int
+as
+begin
+   select top (@batch) *
+   from        cdc.table_ct as a
+   left join   cdc.lsn_time_mapping as b
+   on          a._$start_lsn = b.start_lsn
+   where       b.tran_end_time > @time
+   order by    b.tran_end_time asc
+end
+```
+
+Post the following configutation to Kafka Connect rest interface
+
+```json
+{
+	"name" : "cdc_timestamp",
+	"config" : {
+		"tasks.max": "1",
+		"connector.class": "com.agoda.kafka.connector.jdbc.JdbcSourceConnector",
+		"connection.url" : "jdbc:sqlserver://localhost:1433;user=sa;password=Passw0rd",
+		"mode" : "timestamp",
+		"stored-procedure.name" : "cdc_table",
+		"topic" : "cdc-table-changelogs",
+		"batch.max.rows.variable.name" : "batch",
+		"timestamp.variable.name" : "time",
+		"timestamp.field.name" : "tran_end_time"
+	}
+}
+```
+
 License
 -------
 
