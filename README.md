@@ -17,6 +17,13 @@ build.sbt
 libraryDependencies ++= Seq("com.agoda" %% "kafka-jdbc-connector" % "0.9.0.0")
 ```
 
+Requirements
+------------
+
+* ***Scala*** version 2.11.* and 2.12.*
+* ***Kafka*** version 0.9.0.0
+* ***Kafka Connect*** version 0.9.0.0
+
 Examples
 --------
 
