@@ -143,6 +143,13 @@ Post the following configutation to Kafka Connect rest interface
 }
 ```
 
+Contributing
+------------
+
+**Kafka JDBC Connector** is an open source project, and depends on its users to improve it. We are more than happy to find you interested in taking the project forward.
+
+Kindly refer to the [Contribution Guidelines](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CONTRIBUTING.md) for detailed information.
+
 License
 -------
 
