@@ -13,3 +13,9 @@ TODOs
 * Change logs
 * Performance comparison
 * Contribution guidelines
+
+
+License
+-------
+
+Kafka JDBC Connector is Open Source and available under the [MIT License](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/LICENSE.txt).
