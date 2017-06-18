@@ -24,7 +24,7 @@ Examples
 
 Create a stored procedure in MSSQL database
 
-```sql
+```
 create procedure [dbo].[cdc_table]
 	@time datetime,
 	@batch int
@@ -41,7 +41,7 @@ end
 
 Post the following configutation to Kafka Connect rest interface
 
-```json
+```
 {
 	"name" : "cdc_timestamp",
 	"config" : {
