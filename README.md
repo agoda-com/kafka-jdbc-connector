@@ -150,6 +150,11 @@ Contributing
 
 Kindly refer to the [Contribution Guidelines](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CONTRIBUTING.md) for detailed information.
 
+Code of Conduct
+---------------
+
+Please refer to [this](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CODE_OF_CONDUCT.md) document.
+
 License
 -------
 
@@ -159,5 +164,4 @@ TODO
 ----
 
 * Change logs
-* Code of conduct
 * Sample project
