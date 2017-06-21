@@ -14,7 +14,7 @@ Install
 build.sbt
 
 ```scala
-libraryDependencies ++= Seq("com.agoda" %% "kafka-jdbc-connector" % "0.9.0.0")
+libraryDependencies ++= Seq("com.agoda" %% "kafka-jdbc-connector" % "1.0.0")
 ```
 
 Change Log
