@@ -17,10 +17,10 @@ build.sbt
 libraryDependencies ++= Seq("com.agoda" %% "kafka-jdbc-connector" % "0.9.0.0")
 ```
 
-Changelog
----------
+Change Log
+----------
 
-Please refer to [Changelogs](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CHANGE_LOG.md) for dependencies and changes in the project.
+Please refer to [Change Log](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CHANGE_LOG.md) for requirements, supported databases and project changes.
 
 Examples
 --------
