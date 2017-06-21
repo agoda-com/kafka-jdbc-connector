@@ -17,12 +17,10 @@ build.sbt
 libraryDependencies ++= Seq("com.agoda" %% "kafka-jdbc-connector" % "0.9.0.0")
 ```
 
-Requirements
-------------
+Changelog
+---------
 
-* ***Scala*** version 2.11.* and 2.12.*
-* ***Kafka*** version 0.9.0.0
-* ***Kafka Connect*** version 0.9.0.0
+Please refer to [Changelogs](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CHANGE_LOG.md) for dependencies and changes in the project.
 
 Examples
 --------
@@ -153,15 +151,9 @@ Kindly refer to the [Contribution Guidelines](https://github.com/agoda-com/kafka
 Code of Conduct
 ---------------
 
-Please refer to [this](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CODE_OF_CONDUCT.md) document.
+Please refer to [Code of Conduct](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CODE_OF_CONDUCT.md) document.
 
 License
 -------
 
 Kafka JDBC Connector is Open Source and available under the [MIT License](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/LICENSE.txt).
-
-TODO
-----
-
-* Change logs
-* Sample project
