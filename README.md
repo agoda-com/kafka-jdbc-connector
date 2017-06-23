@@ -25,6 +25,8 @@ Please refer to [Change Log](https://github.com/agoda-com/kafka-jdbc-connector/b
 Examples
 --------
 
+Click [here](https://github.com/agoda-com/kafka-jdbc-connector-samples) for examples.
+
 ### Timestamp mode
 
 Create a stored procedure in MSSQL database
