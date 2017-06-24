@@ -1,6 +1,13 @@
 Change Log
 ----------
 
+Release 1.0.1
+-------------
+
+### Fixed
+
+* NullPointerException in Kafka source connector while connecting to database.
+
 Release 1.0.0
 -------------
 
