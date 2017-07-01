@@ -8,6 +8,14 @@ Kafka JDBC Connector
 
 *Simple way to copy data from relational databases into kafka.*
 
+To copy data between Kafka and another system, users create a Connector for the system which they want to pull data from or push data to. Connectors come in two flavors: *SourceConnectors* to import data from another system and *SinkConnectors* to export data from Kafka to other datasources. This project is an implementation of *SourceConnector* which allows users to copy data from relational databases into Kafka topics. It provides a flexible way to keep logic of selecting next batch of records inside database stored procedures which is invoked from the connector tasks in each poll cycle.
+
+Following are few advantages of using stored procedures
+
+* Select only required columns to be returned as a record.
+* Filtering / Grouping rows returned to connector with SQL.
+* Changing logic of returned batch without reconfiguring connector.
+
 Install
 -------
 
