@@ -11,9 +11,9 @@ class DatabaseProductTest extends WordSpec with Matchers  {
       DatabaseProduct.MsSQL.entryName shouldEqual "Microsoft SQL Server"
     }
 
-    "convert string to corresponding Mode representation" in {
-      Mode.withName("MySQL") shouldBe MySQL
-      Mode.withName("Microsoft SQL Server") shouldBe MsSQL
+    "convert string to corresponding DatabaseProduct representation" in {
+      DatabaseProduct.withName("MySQL") shouldBe MySQL
+      DatabaseProduct.withName("Microsoft SQL Server") shouldBe MsSQL
     }
   }
 }
