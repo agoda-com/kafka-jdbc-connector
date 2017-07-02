@@ -5,7 +5,7 @@ lazy val `kafka-jdbc-connector` =
   (project in file("."))
     .settings(
       name := "kafka-jdbc-connector",
-      version := "1.0.1",
+      version := "1.2.0",
       organization := "com.agoda",
       scalaVersion := "2.11.7",
       crossScalaVersions := Seq("2.11.7", "2.12.2"),

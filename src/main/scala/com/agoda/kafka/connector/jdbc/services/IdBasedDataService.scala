@@ -4,6 +4,8 @@ import java.io.IOException
 import java.sql.{Connection, PreparedStatement, ResultSet}
 
 import com.agoda.kafka.connector.jdbc.JdbcSourceConnectorConstants
+import com.agoda.kafka.connector.jdbc.models.DatabaseProduct
+import com.agoda.kafka.connector.jdbc.models.DatabaseProduct.{MsSQL, MySQL}
 import com.agoda.kafka.connector.jdbc.models.Mode.IncrementingMode
 import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
@@ -16,6 +18,7 @@ import scala.util.Try
 
 /**
   * @constructor
+  * @param databaseProduct type of database server
   * @param storedProcedureName name of the stored procedure
   * @param batchSize number of records returned in each batch
   * @param batchSizeVariableName name of the batch size variable in stored procedure
@@ -25,7 +28,8 @@ import scala.util.Try
   * @param topic name of kafka topic where records are stored
   * @param keyFieldOpt optional key field name in returned records
   */
-case class IdBasedDataService(storedProcedureName: String,
+case class IdBasedDataService(databaseProduct: DatabaseProduct,
+                              storedProcedureName: String,
                               batchSize: Int,
                               batchSizeVariableName: String,
                               incrementingVariableName: String,
@@ -35,9 +39,10 @@ case class IdBasedDataService(storedProcedureName: String,
                               keyFieldOpt: Option[String]) extends DataService {
 
   override protected def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
-    val preparedStatement = connection.prepareStatement(
-      s"EXECUTE $storedProcedureName @$incrementingVariableName = ?, @$batchSizeVariableName = ?"
-    )
+    val preparedStatement = databaseProduct match {
+      case MsSQL => connection.prepareStatement(s"EXECUTE $storedProcedureName @$incrementingVariableName = ?, @$batchSizeVariableName = ?")
+      case MySQL => connection.prepareStatement(s"CALL $storedProcedureName (@$incrementingVariableName := ?, @$batchSizeVariableName := ?)")
+    }
     preparedStatement.setObject(1, incrementingOffset)
     preparedStatement.setObject(2, batchSize)
     preparedStatement
