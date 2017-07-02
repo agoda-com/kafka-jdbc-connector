@@ -1,7 +1,7 @@
 Change Log
-----------
+==========
 
-Release 1.0.2
+Release 1.2.0
 -------------
 
 ### Requirements
