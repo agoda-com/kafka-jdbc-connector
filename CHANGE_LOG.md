@@ -1,6 +1,24 @@
 Change Log
 ----------
 
+Release 1.0.2
+-------------
+
+### Requirements
+
+* Scala         2.11.*  / 2.12.*
+* Kafka         0.9.0.0
+* Kafka Connect 0.9.0.0
+
+### Supported Databases
+
+* Mssql
+* Mysql
+
+### Added
+
+* Extending support for MySQL database.
+
 Release 1.0.1
 -------------
 
