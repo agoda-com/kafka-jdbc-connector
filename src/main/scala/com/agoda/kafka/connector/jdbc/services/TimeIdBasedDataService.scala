@@ -5,6 +5,8 @@ import java.sql.{Connection, PreparedStatement, ResultSet, Timestamp}
 import java.util.{Date, GregorianCalendar, TimeZone}
 
 import com.agoda.kafka.connector.jdbc.JdbcSourceConnectorConstants
+import com.agoda.kafka.connector.jdbc.models.DatabaseProduct
+import com.agoda.kafka.connector.jdbc.models.DatabaseProduct.{MsSQL, MySQL}
 import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampMode}
 import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
@@ -17,6 +19,7 @@ import scala.util.Try
 
 /**
   * @constructor
+  * @param databaseProduct type of database server
   * @param storedProcedureName name of the stored procedure
   * @param batchSize number of records returned in each batch
   * @param batchSizeVariableName name of the batch size variable in stored procedure
@@ -29,7 +32,8 @@ import scala.util.Try
   * @param topic name of kafka topic where records are stored
   * @param keyFieldOpt optional key field name in returned records
   */
-case class TimeIdBasedDataService(storedProcedureName: String,
+case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
+                                  storedProcedureName: String,
                                   batchSize: Int,
                                   batchSizeVariableName: String,
                                   timestampVariableName: String,
@@ -44,9 +48,10 @@ case class TimeIdBasedDataService(storedProcedureName: String,
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
   override def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
-    val preparedStatement = connection.prepareStatement(
-      s"EXECUTE $storedProcedureName @$timestampVariableName = ?, @$incrementingVariableName = ?, @$batchSizeVariableName = ?"
-    )
+    val preparedStatement = databaseProduct match {
+      case MsSQL => connection.prepareStatement(s"EXECUTE $storedProcedureName @$timestampVariableName = ?, @$incrementingVariableName = ?, @$batchSizeVariableName = ?")
+      case MySQL => connection.prepareStatement(s"CALL $storedProcedureName (@$timestampVariableName := ?, @$incrementingVariableName := ?, @$batchSizeVariableName := ?)")
+    }
     preparedStatement.setTimestamp(1, new Timestamp(timestampOffset), UTC_CALENDAR)
     preparedStatement.setObject(2, incrementingOffset)
     preparedStatement.setObject(3, batchSize)

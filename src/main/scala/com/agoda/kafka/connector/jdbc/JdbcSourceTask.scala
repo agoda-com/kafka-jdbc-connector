@@ -4,6 +4,7 @@ import java.sql.{Connection, DriverManager, SQLException}
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 
+import com.agoda.kafka.connector.jdbc.models.DatabaseProduct
 import com.agoda.kafka.connector.jdbc.models.Mode.{IncrementingMode, TimestampIncrementingMode, TimestampMode}
 import com.agoda.kafka.connector.jdbc.services.{DataService, IdBasedDataService, TimeBasedDataService, TimeIdBasedDataService}
 import com.agoda.kafka.connector.jdbc.utils.Version
@@ -46,6 +47,8 @@ class JdbcSourceTask extends SourceTask {
                                        throw e
     }
 
+    val databaseProduct =  DatabaseProduct.withName(db.getMetaData.getDatabaseProductName)
+
     val offset = context.offsetStorageReader().offset(
       Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> config.getStoredProcedureName).asJava
     )
@@ -63,18 +66,18 @@ class JdbcSourceTask extends SourceTask {
     config.getMode match {
       case TimestampMode =>
         val timestampOffset = Try(offset.get(TimestampMode.entryName)).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
-        dataService = TimeBasedDataService(storedProcedureName, batchSize, batchSizeVariableName,
+        dataService = TimeBasedDataService(databaseProduct, storedProcedureName, batchSize, batchSizeVariableName,
             timestampVariableNameOpt.get, timestampOffset, timestampFieldNameOpt.get, topic, keyFieldOpt)
 
       case IncrementingMode =>
         val incrementingOffset = Try(offset.get(IncrementingMode.entryName)).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
-        dataService = IdBasedDataService(storedProcedureName, batchSize, batchSizeVariableName,
+        dataService = IdBasedDataService(databaseProduct, storedProcedureName, batchSize, batchSizeVariableName,
             incrementingVariableNameOpt.get, incrementingOffset, incrementingFieldNameOpt.get, topic, keyFieldOpt)
 
       case TimestampIncrementingMode =>
         val timestampOffset    = Try(offset.get(TimestampMode.entryName)).map(_.toString.toLong).getOrElse(config.getTimestampOffset)
         val incrementingOffset = Try(offset.get(IncrementingMode.entryName)).map(_.toString.toLong).getOrElse(config.getIncrementingOffset)
-        dataService = TimeIdBasedDataService(storedProcedureName, batchSize, batchSizeVariableName,
+        dataService = TimeIdBasedDataService(databaseProduct, storedProcedureName, batchSize, batchSizeVariableName,
             timestampVariableNameOpt.get, timestampOffset, incrementingVariableNameOpt.get, incrementingOffset,
             timestampFieldNameOpt.get, incrementingFieldNameOpt.get, topic, keyFieldOpt)
     }
