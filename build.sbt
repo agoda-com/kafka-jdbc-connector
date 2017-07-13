@@ -30,7 +30,7 @@ lazy val `kafka-jdbc-connector` =
       ),
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
       publishMavenStyle := true,
-      licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
+      licenses := Seq("Apache 2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
       homepage := Some(url("https://github.com/agoda-com/kafka-jdbc-connector")),
       scmInfo := Some(
         ScmInfo(
