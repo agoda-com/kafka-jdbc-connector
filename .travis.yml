@@ -6,13 +6,15 @@ jdk:
   - oraclejdk8
 env:
   matrix:
-    - SCRIPT="sbt -jvm-opts .travis-jvmopts +test"
+    - SCRIPT="sbt -jvm-opts .travis-jvmopts clean coverage test coverageReport"
 # important to use eval, otherwise "&&" is passed as an argument to sbt rather than being processed by bash
 script: eval $SCRIPT
 cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot
+after_success:
+  - bash <(curl -s https://codecov.io/bash) || echo 'Codecov failed to upload'
 notifications:
   webhooks:
     urls:
