@@ -26,4 +26,5 @@ The steps below describe how to get a patch into a master branch.
 5. Run code coverage to check if the lines of code you added are covered by unit tests.
 6. Once your feature is complete, prepare the commit with appropriate message and the issue number. e.g. this commit is a sample #12.
 7. Create a [pull request](https://help.github.com/articles/about-pull-requests/) and wait for the users to review.
-8. Once everything is said and done, your pull request gets merged. Your feature will be available with the next release.
+8. Sign [Contributor License Agreement](https://github.com/agoda-com/kafka-jdbc-connector/blob/master/CLA.md) if not already signed.
+9. Once everything is said and done, your pull request gets merged. Your feature will be available with the next release.
