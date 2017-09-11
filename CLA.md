@@ -73,12 +73,15 @@ complete details (including required attributions and details of applicable lice
     This Agreement is the entire agreement, both written or oral, with respect to the Contributions between the parties. No amendment, modification or waiver of any provision of this Agreement will be effective unless in writing and signed by both parties. If any provision of this Agreement is held to be invalid or unenforceable, the remaining portions will remain in full force and effect and such provision will be enforced to the maximum extent possible so as to affect the intent of the parties and will be reformed to the extent necessary to make such provision valid and enforceable. All notices and other communications herein permitted or required under this Agreement will be sent by postage prepaid, via registered or certified mail or overnight courier, return receipt requested, or delivered personally to the parties at their respective addresses, or to such other address as either party will give to the other party in the manner provided herein for giving notice. Notice will be considered given upon receipt.
 
 \___________________________________
+
 Contributor
 
 \___________________________________
+
 Date
 
 \___________________________________
+
 Print Name
 
 Acknowledged [Agoda.com](https://www.agoda.com)
