@@ -11,11 +11,11 @@ Please read this document carefully before signing and keep a copy for your reco
 - Full legal name:
 - Public name/Alias:
 - Mailing Address:
-- Country:
+- Location:
 - GitHub ID:
 - Telephone:
 - E-Mail:
-- Open Source Project(s):
+- Open Source Project(s):[Kafka JDBC Connector](https://github.com/agoda-com/kafka-jdbc-connector)
 
 You accept and agree to the following terms and conditions for Your past, present and future Contributions submitted to the Company.
 
