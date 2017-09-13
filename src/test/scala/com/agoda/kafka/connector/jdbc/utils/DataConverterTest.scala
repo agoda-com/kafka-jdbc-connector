@@ -763,7 +763,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
 
       val r = DataConverter.convertRecord(schema, rS)
 
-      r.getClass shouldBe Failure.getClass
+      r.getClass shouldBe Failure(new NullPointerException).getClass
     }
 
     "fail if schema and result set don't match" in {
