@@ -31,6 +31,7 @@ import scala.util.Try
   * @param incrementingFieldName incrementing offset field name in returned records
   * @param topic name of kafka topic where records are stored
   * @param keyFieldOpt optional key field name in returned records
+  * @param dataConverter ResultSet converter utility
   */
 case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
                                   storedProcedureName: String,
@@ -43,16 +44,17 @@ case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
                                   timestampFieldName: String,
                                   incrementingFieldName: String,
                                   topic: String,
-                                  keyFieldOpt: Option[String]) extends DataService {
-
-  private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
+                                  keyFieldOpt: Option[String],
+                                  dataConverter: DataConverter,
+                                  calendar: GregorianCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
+                                 ) extends DataService {
 
   override def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = databaseProduct match {
       case MsSQL => connection.prepareStatement(s"EXECUTE $storedProcedureName @$timestampVariableName = ?, @$incrementingVariableName = ?, @$batchSizeVariableName = ?")
       case MySQL => connection.prepareStatement(s"CALL $storedProcedureName (@$timestampVariableName := ?, @$incrementingVariableName := ?, @$batchSizeVariableName := ?)")
     }
-    preparedStatement.setTimestamp(1, new Timestamp(timestampOffset), UTC_CALENDAR)
+    preparedStatement.setTimestamp(1, new Timestamp(timestampOffset), calendar)
     preparedStatement.setObject(2, incrementingOffset)
     preparedStatement.setObject(3, batchSize)
     preparedStatement
@@ -64,7 +66,7 @@ case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
     var maxId = incrementingOffset
     val idSchemaType = schema.field(incrementingFieldName).schema.`type`()
     while (resultSet.next()) {
-      DataConverter.convertRecord(schema, resultSet) map { record =>
+      dataConverter.convertRecord(schema, resultSet) map { record =>
         val time = record.get(timestampFieldName).asInstanceOf[Date].getTime
         maxTime = if(time > maxTime) time else maxTime
         val id = idSchemaType match {
@@ -100,9 +102,9 @@ case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
   override def toString: String = {
     s"""
        |{
-       |   "name" : ${this.getClass.getSimpleName}
-       |   "mode" : ${TimestampMode.entryName}+${IncrementingMode.entryName}
-       |   "stored-procedure.name" : $storedProcedureName
+       |   "name" : "${this.getClass.getSimpleName}"
+       |   "mode" : "${TimestampMode.entryName}+${IncrementingMode.entryName}"
+       |   "stored-procedure.name" : "$storedProcedureName"
        |}
     """.stripMargin
   }

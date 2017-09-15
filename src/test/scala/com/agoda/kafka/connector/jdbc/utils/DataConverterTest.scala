@@ -17,6 +17,8 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
 
   "Data Converter" should {
 
+    val dataConverter = new DataConverter
+
     "create schema from result set metadata with non optional columns" in {
       val metaRS = mock[ResultSetMetaData]
 
@@ -141,7 +143,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       when(metaRS.getScale(10)).thenReturn(2)
       when(metaRS.getScale(11)).thenReturn(3)
 
-      val s = DataConverter.convertSchema("test-procedure", metaRS)
+      val s = dataConverter.convertSchema("test-procedure", metaRS)
 
       s.map(_.name) shouldBe Success("test-procedure")
       s.map(_.field("BOOLEAN").schema()) shouldBe Success(Schema.BOOLEAN_SCHEMA)
@@ -298,7 +300,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       when(metaRS.getScale(10)).thenReturn(2)
       when(metaRS.getScale(11)).thenReturn(3)
 
-      val s = DataConverter.convertSchema("test-procedure", metaRS)
+      val s = dataConverter.convertSchema("test-procedure", metaRS)
 
       s.map(_.name) shouldBe Success("test-procedure")
       s.map(_.field("BOOLEAN").schema()) shouldBe Success(Schema.OPTIONAL_BOOLEAN_SCHEMA)
@@ -344,7 +346,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       when(metaRS.isNullable(1)).thenReturn(ResultSetMetaData.columnNoNulls)
       when(metaRS.isNullable(2)).thenReturn(ResultSetMetaData.columnNullableUnknown)
 
-      val s = DataConverter.convertSchema("test-procedure-unsupported", metaRS)
+      val s = dataConverter.convertSchema("test-procedure-unsupported", metaRS)
 
       s.map(_.name) shouldBe Success("test-procedure-unsupported")
       s.map(_.fields.size) shouldBe Success(1)
@@ -515,7 +517,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       when(rS.getTime(same(27), any())).thenReturn(new SqlTime(27L))
       when(rS.getTimestamp(same(28), any())).thenReturn(new SqlTimestamp(28L))
 
-      val r = DataConverter.convertRecord(schema, rS)
+      val r = dataConverter.convertRecord(schema, rS)
 
       r.map(_.schema) shouldBe Success(schema)
       r.map(_.getBoolean("BOOLEAN")) shouldBe Success(true)
@@ -694,7 +696,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       when(rS.getTime(same(27), any())).thenReturn(null)
       when(rS.getTimestamp(same(28), any())).thenReturn(null)
 
-      val r = DataConverter.convertRecord(schema, rS)
+      val r = dataConverter.convertRecord(schema, rS)
 
       r.map(_.schema) shouldBe Success(schema)
       r.map(_.getBoolean("BOOLEAN")) shouldBe Success(false)
@@ -746,7 +748,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       when(metaRS.getColumnType(2)).thenReturn(Types.NULL)
       when(rS.getInt(1)).thenReturn(5)
 
-      val r = DataConverter.convertRecord(schema, rS)
+      val r = dataConverter.convertRecord(schema, rS)
 
       r.map(_.schema) shouldBe Success(schema)
       r.map(_.getInt32("KEY")) shouldBe Success(5)
@@ -761,7 +763,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       builder.field("VALUE", Schema.OPTIONAL_STRING_SCHEMA)
       val schema = builder.build()
 
-      val r = DataConverter.convertRecord(schema, rS)
+      val r = dataConverter.convertRecord(schema, rS)
 
       r.getClass shouldBe Failure(new NullPointerException).getClass
     }
@@ -786,7 +788,7 @@ class DataConverterTest extends WordSpec with Matchers with MockitoSugar {
       when(rS.getInt(1)).thenReturn(5)
       when(rS.getDouble(2)).thenReturn(3.14)
 
-      val r = DataConverter.convertRecord(schema, rS)
+      val r = dataConverter.convertRecord(schema, rS)
 
       r.isFailure shouldEqual true
       the [DataException] thrownBy r.get

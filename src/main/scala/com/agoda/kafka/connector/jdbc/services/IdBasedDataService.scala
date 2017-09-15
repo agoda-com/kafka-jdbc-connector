@@ -27,6 +27,7 @@ import scala.util.Try
   * @param incrementingFieldName incrementing offset field name in returned records
   * @param topic name of kafka topic where records are stored
   * @param keyFieldOpt optional key field name in returned records
+  * @param dataConverter ResultSet converter utility
   */
 case class IdBasedDataService(databaseProduct: DatabaseProduct,
                               storedProcedureName: String,
@@ -36,9 +37,10 @@ case class IdBasedDataService(databaseProduct: DatabaseProduct,
                               var incrementingOffset: Long,
                               incrementingFieldName: String,
                               topic: String,
-                              keyFieldOpt: Option[String]) extends DataService {
+                              keyFieldOpt: Option[String],
+                              dataConverter: DataConverter) extends DataService {
 
-  override protected def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
+  override def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = databaseProduct match {
       case MsSQL => connection.prepareStatement(s"EXECUTE $storedProcedureName @$incrementingVariableName = ?, @$batchSizeVariableName = ?")
       case MySQL => connection.prepareStatement(s"CALL $storedProcedureName (@$incrementingVariableName := ?, @$batchSizeVariableName := ?)")
@@ -48,12 +50,12 @@ case class IdBasedDataService(databaseProduct: DatabaseProduct,
     preparedStatement
   }
 
-  override protected def extractRecords(resultSet: ResultSet, schema: Schema): Try[Seq[SourceRecord]] = Try {
+  override def extractRecords(resultSet: ResultSet, schema: Schema): Try[Seq[SourceRecord]] = Try {
     val sourceRecords = ListBuffer.empty[SourceRecord]
     val idSchemaType = schema.field(incrementingFieldName).schema.`type`()
     var max = incrementingOffset
     while(resultSet.next()) {
-      DataConverter.convertRecord(schema, resultSet).map { record =>
+      dataConverter.convertRecord(schema, resultSet).map { record =>
         val id = idSchemaType match {
           case Type.INT8  => record.getInt8(incrementingFieldName).toLong
           case Type.INT16 => record.getInt16(incrementingFieldName).toLong
@@ -84,9 +86,9 @@ case class IdBasedDataService(databaseProduct: DatabaseProduct,
   override def toString: String = {
     s"""
        |{
-       |   "name" : ${this.getClass.getSimpleName}
-       |   "mode" : ${IncrementingMode.entryName}
-       |   "stored-procedure.name" : $storedProcedureName
+       |   "name" : "${this.getClass.getSimpleName}"
+       |   "mode" : "${IncrementingMode.entryName}"
+       |   "stored-procedure.name" : "$storedProcedureName"
        |}
     """.stripMargin
   }
