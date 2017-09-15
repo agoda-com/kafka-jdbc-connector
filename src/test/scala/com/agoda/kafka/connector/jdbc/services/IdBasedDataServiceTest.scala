@@ -1,12 +1,20 @@
 package com.agoda.kafka.connector.jdbc.services
 
-import java.sql.{Connection, PreparedStatement}
+import java.sql.{Connection, PreparedStatement, ResultSet}
 
+import com.agoda.kafka.connector.jdbc.JdbcSourceConnectorConstants
 import com.agoda.kafka.connector.jdbc.models.DatabaseProduct.{MsSQL, MySQL}
+import com.agoda.kafka.connector.jdbc.models.Mode.IncrementingMode
 import com.agoda.kafka.connector.jdbc.utils.DataConverter
+import org.apache.kafka.connect.data.{Field, Schema, Struct}
+import org.apache.kafka.connect.source.SourceRecord
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, WordSpec}
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
+import scala.util.Success
 
 class IdBasedDataServiceTest extends WordSpec with Matchers with MockitoSugar {
 
@@ -81,6 +89,34 @@ class IdBasedDataServiceTest extends WordSpec with Matchers with MockitoSugar {
            |   "stored-procedure.name" : "stored-procedure"
            |}
     """.stripMargin
+    }
+
+    "extract records" in {
+      val resultSet = mock[ResultSet]
+      val schema = mock[Schema]
+      val field = mock[Field]
+      val struct = mock[Struct]
+
+      when(schema.field("id")).thenReturn(field)
+      when(field.schema()).thenReturn(Schema.INT32_SCHEMA)
+      when(resultSet.next()).thenReturn(true, true, false)
+      when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
+      when(struct.getInt32("id")).thenReturn(1, 2)
+
+
+      idBasedDataServiceMssql.extractRecords(resultSet, schema).toString shouldBe
+        Success(
+          ListBuffer(
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(IncrementingMode.entryName -> 1).asJava, "id-based-data-topic", schema, struct
+            ),
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(IncrementingMode.entryName -> 2).asJava, "id-based-data-topic", schema, struct
+            )
+          )
+        ).toString
     }
   }
 }
