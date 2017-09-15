@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-object DataConverter {
+class DataConverter {
   private val logger = LoggerFactory.getLogger(classOf[JdbcSourceTask])
   private val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 

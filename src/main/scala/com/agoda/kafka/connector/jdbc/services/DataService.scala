@@ -17,6 +17,13 @@ trait DataService {
   def storedProcedureName: String
 
 /**
+  * Utility to convert SQL ResultSet into Struct
+  *
+  * @return instance of DataConverter
+  */
+  def dataConverter: DataConverter
+
+/**
   * Fetch records from database
   *
   * @param connection database connection
@@ -27,7 +34,7 @@ trait DataService {
     for {
       preparedStatement <- createPreparedStatement(connection)
       resultSet         <- executeStoredProcedure(preparedStatement, timeout)
-      schema            <- DataConverter.convertSchema(storedProcedureName, resultSet.getMetaData)
+      schema            <- dataConverter.convertSchema(storedProcedureName, resultSet.getMetaData)
       records           <- extractRecords(resultSet, schema)
     } yield records
   }
