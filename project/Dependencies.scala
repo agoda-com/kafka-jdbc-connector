@@ -9,7 +9,7 @@ object Dependencies {
   private val Enumeratum          = "com.beachape"               %% "enumeratum"      % "1.5.12"
   private val Scalatics           = "org.scalactic"              %% "scalactic"       % ScalaTestV  % "test"
   private val ScalaTest           = "org.scalatest"              %% "scalatest"       % ScalaTestV  % "test"
-  private val Mockito             = "org.mockito"                 % "mockito-core"    % "2.8.9"     % "test"
+  private val Mockito             = "org.mockito"                 % "mockito-core"    % "2.10.0"     % "test"
 
   object Compile {
     def kafkaJdbcConnector  = Seq(LogBack, ScalaLogging, KafkaConnectApi, Enumeratum)
