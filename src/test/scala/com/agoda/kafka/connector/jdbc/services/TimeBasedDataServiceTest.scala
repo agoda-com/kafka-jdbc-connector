@@ -122,23 +122,22 @@ class TimeBasedDataServiceTest extends WordSpec with Matchers with MockitoSugar 
       timeBasedDataServiceMssql.timestampOffset shouldBe 2L
     }
 
-    "don't change offset when the record timestamps are smaller than offset timestamp" in {
+    "return nothing when the record timestamps are smaller than or equal to the offset timestamp" in {
       val timeBasedDataServiceWithLargerOffsetMssql = timeBasedDataServiceMssql.copy(timestampOffset = 3L)
       val resultSet = mock[ResultSet]
       val schema = mock[Schema]
       val struct = mock[Struct]
 
-      when(resultSet.next()).thenReturn(true, true, false)
+      when(resultSet.next()).thenReturn(true, true, true, false)
       when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
-      when(struct.get("time")).thenReturn(new Date(1L), new Date(2L))
+      when(struct.get("time")).thenReturn(new Date(1L), new Date(2L), new Date(3L))
 
-      timeBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema)
-
+      timeBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema) shouldBe Success(ListBuffer())
       timeBasedDataServiceWithLargerOffsetMssql.timestampOffset shouldBe 3L
     }
 
     "extract records with key" in {
-      val timeBasedDataServiceWithKeyMysql = timeBasedDataServiceMssql.copy(keyFieldOpt = Some("key"))
+      val timeBasedDataServiceWithKeyMysql = timeBasedDataServiceMysql.copy(keyFieldOpt = Some("key"))
       val resultSet = mock[ResultSet]
       val schema = mock[Schema]
       val struct = mock[Struct]

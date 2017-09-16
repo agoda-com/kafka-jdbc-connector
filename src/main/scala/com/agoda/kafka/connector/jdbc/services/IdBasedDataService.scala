@@ -67,20 +67,21 @@ case class IdBasedDataService(databaseProduct: DatabaseProduct,
             logger.warn("Id field is not of type INT")
             throw new IOException("Id field is not of type INT")
         }
-        max = if (id > max) id else max
-
-        keyFieldOpt match {
-          case Some(keyField) =>
-            sourceRecords += new SourceRecord(
-              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-              Map(IncrementingMode.entryName -> id).asJava, topic, null, schema, record.get(keyField), schema, record
-            )
-          case None           =>
-            sourceRecords += new SourceRecord(
-              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-              Map(IncrementingMode.entryName -> id).asJava, topic, schema, record
-            )
-        }
+        max = if (id > max) {
+          keyFieldOpt match {
+            case Some(keyField) =>
+              sourceRecords += new SourceRecord(
+                Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+                Map(IncrementingMode.entryName -> id).asJava, topic, null, schema, record.get(keyField), schema, record
+              )
+            case None           =>
+              sourceRecords += new SourceRecord(
+                Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+                Map(IncrementingMode.entryName -> id).asJava, topic, schema, record
+              )
+          }
+          id
+        } else max
       }
     }
     incrementingOffset = max
