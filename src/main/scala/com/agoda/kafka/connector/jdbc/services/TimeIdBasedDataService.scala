@@ -12,6 +12,7 @@ import com.agoda.kafka.connector.jdbc.utils.DataConverter
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.Schema.Type
 import org.apache.kafka.connect.source.SourceRecord
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -48,6 +49,7 @@ case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
                                   dataConverter: DataConverter,
                                   calendar: GregorianCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
                                  ) extends DataService {
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def createPreparedStatement(connection: Connection): Try[PreparedStatement] = Try {
     val preparedStatement = databaseProduct match {
@@ -74,7 +76,9 @@ case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
           case Type.INT16 => record.getInt16(incrementingFieldName).toLong
           case Type.INT32 => record.getInt32(incrementingFieldName).toLong
           case Type.INT64 => record.getInt64(incrementingFieldName).toLong
-          case _          => throw new IOException("Id field is not of type INT")
+          case _          =>
+            logger.warn("Id field is not of type INT")
+            throw new IOException("Id field is not of type INT")
         }
         maxId = if (id > maxId) id else maxId
 

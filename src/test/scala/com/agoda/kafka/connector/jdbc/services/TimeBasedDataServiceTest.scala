@@ -119,6 +119,48 @@ class TimeBasedDataServiceTest extends WordSpec with Matchers with MockitoSugar 
             )
           )
         ).toString
+      timeBasedDataServiceMssql.timestampOffset shouldBe 2L
+    }
+
+    "don't change offset when the record timestamps are smaller than offset timestamp" in {
+      val timeBasedDataServiceWithLargerOffsetMssql = timeBasedDataServiceMssql.copy(timestampOffset = 3L)
+      val resultSet = mock[ResultSet]
+      val schema = mock[Schema]
+      val struct = mock[Struct]
+
+      when(resultSet.next()).thenReturn(true, true, false)
+      when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
+      when(struct.get("time")).thenReturn(new Date(1L), new Date(2L))
+
+      timeBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema)
+
+      timeBasedDataServiceWithLargerOffsetMssql.timestampOffset shouldBe 3L
+    }
+
+    "extract records with key" in {
+      val timeBasedDataServiceWithKeyMysql = timeBasedDataServiceMssql.copy(keyFieldOpt = Some("key"))
+      val resultSet = mock[ResultSet]
+      val schema = mock[Schema]
+      val struct = mock[Struct]
+
+      when(resultSet.next()).thenReturn(true, true, false)
+      when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
+      when(struct.get("time")).thenReturn(new Date(1L), new Date(2L))
+      when(struct.get("key")).thenReturn("key-1", "key-2")
+
+      timeBasedDataServiceWithKeyMysql.extractRecords(resultSet, schema).toString shouldBe
+        Success(
+          ListBuffer(
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(TimestampMode.entryName -> 1L).asJava, "time-based-data-topic", null, schema, "key-1", schema, struct
+            ),
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(TimestampMode.entryName -> 2L).asJava, "time-based-data-topic", null, schema, "key-2", schema, struct
+            )
+          )
+        ).toString
     }
   }
 }
