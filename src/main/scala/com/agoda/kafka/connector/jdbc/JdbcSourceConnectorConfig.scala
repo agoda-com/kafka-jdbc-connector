@@ -1,6 +1,7 @@
 package com.agoda.kafka.connector.jdbc
 
 import java.sql.Timestamp
+import java.util.TimeZone
 
 import com.agoda.kafka.connector.jdbc.JdbcSourceConnectorConstants._
 import com.agoda.kafka.connector.jdbc.models.Mode
@@ -113,7 +114,7 @@ class JdbcSourceConnectorConfig(val properties: Map[String, String]) {
   def getTimestampOffset: Long = {
     properties
       .get(TIMESTAMP_OFFSET_CONFIG)
-      .map(o => Timestamp.valueOf(o))
+      .map(o => new Timestamp(Timestamp.valueOf(o).getTime + TimeZone.getDefault.getRawOffset))
       .getOrElse(TIMESTAMP_OFFSET_DEFAULT).getTime
   }
 

@@ -78,7 +78,7 @@ class JdbcSourceConnectorConfigTest extends WordSpec with Matchers {
       configuration.getTimestampFieldName shouldBe Some("time")
       configuration.getIncrementingVariableName shouldBe Some("id")
       configuration.getIncrementingFieldName shouldBe Some("id")
-      configuration.getTimestampOffset shouldBe 946659600000L
+      configuration.getTimestampOffset shouldBe 946684800000L
       configuration.getIncrementingOffset shouldBe 5L
       configuration.getKeyField shouldBe Some("test-key")
     }
