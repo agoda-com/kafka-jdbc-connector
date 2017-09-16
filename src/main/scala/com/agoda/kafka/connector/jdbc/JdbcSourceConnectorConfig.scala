@@ -111,8 +111,10 @@ class JdbcSourceConnectorConfig(val properties: Map[String, String]) {
   * @return initial timestamp offset
   */
   def getTimestampOffset: Long = {
-    val maybeTimestamp = properties.get(TIMESTAMP_OFFSET_CONFIG).map(o => Timestamp.valueOf(o))
-    maybeTimestamp.getOrElse(TIMESTAMP_OFFSET_DEFAULT).getTime
+    properties
+      .get(TIMESTAMP_OFFSET_CONFIG)
+      .map(o => Timestamp.valueOf(o))
+      .getOrElse(TIMESTAMP_OFFSET_DEFAULT).getTime
   }
 
 /**
