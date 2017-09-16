@@ -25,7 +25,7 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
 
     val UTC_CALENDAR = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
 
-    val idBasedDataServiceMssql =
+    val timeIdBasedDataServiceMssql =
       TimeIdBasedDataService(
         databaseProduct = MsSQL,
         storedProcedureName = "stored-procedure",
@@ -43,7 +43,7 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
         calendar = UTC_CALENDAR
       )
 
-    val idBasedDataServiceMysql =
+    val timeIdBasedDataServiceMysql =
       TimeIdBasedDataService(
         databaseProduct = MySQL,
         storedProcedureName = "stored-procedure",
@@ -72,7 +72,7 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
       doNothing().when(statement).setObject(2, 0L)
       doNothing().when(statement).setObject(3, 100)
 
-      idBasedDataServiceMssql.createPreparedStatement(connection)
+      timeIdBasedDataServiceMssql.createPreparedStatement(connection)
 
       verify(connection).prepareStatement("EXECUTE stored-procedure @timestamp-variable = ?, @incrementing-variable = ?, @batch-size-variable = ?")
       verify(statement).setTimestamp(1, timestamp, UTC_CALENDAR)
@@ -89,7 +89,7 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
       doNothing().when(statement).setObject(2, 0L)
       doNothing().when(statement).setObject(3, 100)
 
-      idBasedDataServiceMysql.createPreparedStatement(connection)
+      timeIdBasedDataServiceMysql.createPreparedStatement(connection)
 
       verify(connection).prepareStatement("CALL stored-procedure (@timestamp-variable := ?, @incrementing-variable := ?, @batch-size-variable := ?)")
       verify(statement).setTimestamp(1, timestamp, UTC_CALENDAR)
@@ -98,7 +98,7 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
     }
 
     "create correct string representation" in {
-      idBasedDataServiceMssql.toString shouldBe
+      timeIdBasedDataServiceMssql.toString shouldBe
         s"""
            |{
            |   "name" : "TimeIdBasedDataService"
@@ -121,7 +121,7 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
       when(struct.getInt32("id")).thenReturn(1, 2)
       when(struct.get("time")).thenReturn(new Date(1L), new Date(2L))
 
-      idBasedDataServiceMssql.extractRecords(resultSet, schema).toString shouldBe
+      timeIdBasedDataServiceMssql.extractRecords(resultSet, schema).toString shouldBe
         Success(
           ListBuffer(
             new SourceRecord(
@@ -136,6 +136,75 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
             )
           )
         ).toString
+      timeIdBasedDataServiceMssql.timestampOffset shouldBe 2L
+      timeIdBasedDataServiceMssql.incrementingOffset shouldBe 2
+    }
+
+    "don't change offset when the record ids and timestamps are smaller than offset id" in {
+      val timeIdBasedDataServiceWithLargerOffsetMssql = timeIdBasedDataServiceMssql.copy(incrementingOffset = 3, timestampOffset = 3L)
+      val resultSet = mock[ResultSet]
+      val schema = mock[Schema]
+      val field = mock[Field]
+      val struct = mock[Struct]
+
+      when(schema.field("id")).thenReturn(field)
+      when(field.schema()).thenReturn(Schema.INT32_SCHEMA)
+      when(resultSet.next()).thenReturn(true, true, false)
+      when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
+      when(struct.getInt32("id")).thenReturn(1, 2)
+      when(struct.get("time")).thenReturn(new Date(1L), new Date(2L))
+
+      timeIdBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema)
+
+      timeIdBasedDataServiceWithLargerOffsetMssql.timestampOffset shouldBe 3L
+      timeIdBasedDataServiceWithLargerOffsetMssql.incrementingOffset shouldBe 3
+    }
+
+    "extract records with key" in {
+      val timeIdBasedDataServiceWithKeyMysql = timeIdBasedDataServiceMysql.copy(keyFieldOpt = Some("key"))
+      val resultSet = mock[ResultSet]
+      val schema = mock[Schema]
+      val field = mock[Field]
+      val struct = mock[Struct]
+
+      when(schema.field("id")).thenReturn(field)
+      when(field.schema()).thenReturn(Schema.INT32_SCHEMA)
+      when(resultSet.next()).thenReturn(true, true, false)
+      when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
+      when(struct.getInt32("id")).thenReturn(1, 2)
+      when(struct.get("time")).thenReturn(new Date(1L), new Date(2L))
+      when(struct.get("key")).thenReturn("key-1", "key-2")
+
+      timeIdBasedDataServiceWithKeyMysql.extractRecords(resultSet, schema).toString shouldBe
+        Success(
+          ListBuffer(
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(TimestampMode.entryName -> 1L, IncrementingMode.entryName -> 1).asJava,
+              "time-id-based-data-topic", null, schema, "key-1", schema, struct
+            ),
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(TimestampMode.entryName -> 2L, IncrementingMode.entryName -> 2).asJava,
+              "time-id-based-data-topic", null, schema, "key-2", schema, struct
+            )
+          )
+        ).toString
+    }
+
+    "returns no record when id field is not of type integer" in {
+      val resultSet = mock[ResultSet]
+      val schema = mock[Schema]
+      val field = mock[Field]
+      val struct = mock[Struct]
+
+      when(schema.field("id")).thenReturn(field)
+      when(field.schema()).thenReturn(Schema.STRING_SCHEMA)
+      when(resultSet.next()).thenReturn(true, false)
+      when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
+      when(struct.get("time")).thenReturn(new Date(1L), Nil)
+
+      timeIdBasedDataServiceMysql.extractRecords(resultSet, schema) shouldBe Success(ListBuffer())
     }
   }
 }
