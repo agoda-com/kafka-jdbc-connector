@@ -70,7 +70,6 @@ case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
     while (resultSet.next()) {
       dataConverter.convertRecord(schema, resultSet) map { record =>
         val time = record.get(timestampFieldName).asInstanceOf[Date].getTime
-        maxTime = if(time > maxTime) time else maxTime
         val id = idSchemaType match {
           case Type.INT8  => record.getInt8(incrementingFieldName).toLong
           case Type.INT16 => record.getInt16(incrementingFieldName).toLong
@@ -80,21 +79,25 @@ case class TimeIdBasedDataService(databaseProduct: DatabaseProduct,
             logger.warn("Id field is not of type INT")
             throw new IOException("Id field is not of type INT")
         }
+
+        maxTime = if(time > maxTime) time else maxTime
         maxId = if (id > maxId) id else maxId
 
-        keyFieldOpt match {
-          case Some(keyField) =>
-            sourceRecords += new SourceRecord(
-              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-              Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
-              topic, null, schema, record.get(keyField), schema, record
-            )
-          case None           =>
-            sourceRecords += new SourceRecord(
-              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-              Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
-              topic, schema, record
-            )
+        if(time >= timestampOffset && id > incrementingOffset) {
+          keyFieldOpt match {
+            case Some(keyField) =>
+              sourceRecords += new SourceRecord(
+                Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+                Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
+                topic, null, schema, record.get(keyField), schema, record
+              )
+            case None           =>
+              sourceRecords += new SourceRecord(
+                Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+                Map(TimestampMode.entryName -> time, IncrementingMode.entryName -> id).asJava,
+                topic, schema, record
+              )
+          }
         }
       }
     }

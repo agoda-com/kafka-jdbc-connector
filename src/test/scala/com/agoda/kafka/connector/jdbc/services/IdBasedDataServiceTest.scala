@@ -120,7 +120,7 @@ class IdBasedDataServiceTest extends WordSpec with Matchers with MockitoSugar {
       idBasedDataServiceMssql.incrementingOffset shouldBe 2
     }
 
-    "don't change offset when the record ids are smaller than offset id" in {
+    "return nothing when record ids are smaller than or equal to the offset id" in {
       val idBasedDataServiceWithLargerOffsetMssql = idBasedDataServiceMssql.copy(incrementingOffset = 3L)
       val resultSet = mock[ResultSet]
       val schema = mock[Schema]
@@ -129,12 +129,11 @@ class IdBasedDataServiceTest extends WordSpec with Matchers with MockitoSugar {
 
       when(schema.field("id")).thenReturn(field)
       when(field.schema()).thenReturn(Schema.INT32_SCHEMA)
-      when(resultSet.next()).thenReturn(true, true, false)
+      when(resultSet.next()).thenReturn(true, true, true, false)
       when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
-      when(struct.getInt32("id")).thenReturn(1, 2)
+      when(struct.getInt32("id")).thenReturn(1, 2, 3)
 
-      idBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema)
-
+      idBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema) shouldBe Success(ListBuffer())
       idBasedDataServiceWithLargerOffsetMssql.incrementingOffset shouldBe 3L
     }
 

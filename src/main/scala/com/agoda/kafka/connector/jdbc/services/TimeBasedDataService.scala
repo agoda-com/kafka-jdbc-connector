@@ -57,19 +57,21 @@ case class TimeBasedDataService(databaseProduct: DatabaseProduct,
     while (resultSet.next()) {
       dataConverter.convertRecord(schema, resultSet) map { record =>
         val time = record.get(timestampFieldName).asInstanceOf[Date].getTime
-        max = if(time > max) time else max
-        keyFieldOpt match {
-          case Some(keyField) =>
-            sourceRecords += new SourceRecord(
-              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-              Map(TimestampMode.entryName -> time).asJava, topic, null, schema, record.get(keyField), schema, record
-            )
-          case None           =>
-            sourceRecords += new SourceRecord(
-              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
-              Map(TimestampMode.entryName -> time).asJava, topic, schema, record
-            )
-        }
+        max = if(time > max) {
+          keyFieldOpt match {
+            case Some(keyField) =>
+              sourceRecords += new SourceRecord(
+                Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+                Map(TimestampMode.entryName -> time).asJava, topic, null, schema, record.get(keyField), schema, record
+              )
+            case None           =>
+              sourceRecords += new SourceRecord(
+                Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> storedProcedureName).asJava,
+                Map(TimestampMode.entryName -> time).asJava, topic, schema, record
+              )
+          }
+          time
+        } else max
       }
     }
     timestampOffset = max

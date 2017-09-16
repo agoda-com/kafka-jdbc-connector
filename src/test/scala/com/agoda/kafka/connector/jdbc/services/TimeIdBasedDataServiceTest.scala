@@ -140,7 +140,7 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
       timeIdBasedDataServiceMssql.incrementingOffset shouldBe 2
     }
 
-    "don't change offset when the record ids and timestamps are smaller than offset id" in {
+    "return nothing when record ids and timestamps are smaller than offset id" in {
       val timeIdBasedDataServiceWithLargerOffsetMssql = timeIdBasedDataServiceMssql.copy(incrementingOffset = 3, timestampOffset = 3L)
       val resultSet = mock[ResultSet]
       val schema = mock[Schema]
@@ -154,10 +154,44 @@ class TimeIdBasedDataServiceTest extends WordSpec with Matchers with MockitoSuga
       when(struct.getInt32("id")).thenReturn(1, 2)
       when(struct.get("time")).thenReturn(new Date(1L), new Date(2L))
 
-      timeIdBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema)
+      timeIdBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema) shouldBe Success(ListBuffer())
 
       timeIdBasedDataServiceWithLargerOffsetMssql.timestampOffset shouldBe 3L
       timeIdBasedDataServiceWithLargerOffsetMssql.incrementingOffset shouldBe 3
+    }
+
+    "return record when the record timestamps are equals but record ids are than offset id" in {
+      val timeIdBasedDataServiceWithLargerOffsetMssql = timeIdBasedDataServiceMssql.copy(incrementingOffset = 3, timestampOffset = 3L)
+      val resultSet = mock[ResultSet]
+      val schema = mock[Schema]
+      val field = mock[Field]
+      val struct = mock[Struct]
+
+      when(schema.field("id")).thenReturn(field)
+      when(field.schema()).thenReturn(Schema.INT32_SCHEMA)
+      when(resultSet.next()).thenReturn(true, true, false)
+      when(dataConverter.convertRecord(schema, resultSet)).thenReturn(Success(struct))
+      when(struct.getInt32("id")).thenReturn(4, 5)
+      when(struct.get("time")).thenReturn(new Date(3L), new Date(3L))
+
+      timeIdBasedDataServiceWithLargerOffsetMssql.extractRecords(resultSet, schema).toString shouldBe
+        Success(
+          ListBuffer(
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(TimestampMode.entryName -> 3L, IncrementingMode.entryName -> 4).asJava,
+              "time-id-based-data-topic", schema, struct
+            ),
+            new SourceRecord(
+              Map(JdbcSourceConnectorConstants.STORED_PROCEDURE_NAME_KEY -> "stored-procedure").asJava,
+              Map(TimestampMode.entryName -> 3L, IncrementingMode.entryName -> 5).asJava,
+              "time-id-based-data-topic", schema, struct
+            )
+          )
+        ).toString
+
+      timeIdBasedDataServiceWithLargerOffsetMssql.timestampOffset shouldBe 3L
+      timeIdBasedDataServiceWithLargerOffsetMssql.incrementingOffset shouldBe 5L
     }
 
     "extract records with key" in {
