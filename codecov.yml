@@ -1,0 +1,3 @@
+ignore:
+  - "src/main/scala/com/agoda/kafka/connector/jdbc/JdbcSourceConnector.scala"
+  - "src/main/scala/com/agoda/kafka/connector/jdbc/JdbcSourceTask.scala"
