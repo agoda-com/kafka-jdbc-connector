@@ -10,8 +10,7 @@ lazy val `kafka-jdbc-connector` =
       scalaVersion := "2.11.7",
       crossScalaVersions := Seq("2.11.7", "2.12.2"),
       libraryDependencies ++= Dependencies.Compile.kafkaJdbcConnector ++ Dependencies.Test.kafkaJdbcConnector,
-      fork in Test := true,
-      coverageExcludedPackages := ".*JdbcSourceConnector.*;.*JdbcSourceTask.*"
+      fork in Test := true
     )
     .enablePlugins(BuildInfoPlugin)
     .settings(
@@ -52,6 +51,8 @@ lazy val `kafka-jdbc-connector` =
     .settings(
       coverageExcludedPackages := Seq(
         "com.agoda.BuildInfo",
+        "com.agoda.kafka.connector.jdbc.JdbcSourceConnector",
+        "com.agoda.kafka.connector.jdbc.JdbcSourceTask",
         "com.agoda.kafka.connector.jdbc.utils.Version"
       ).mkString(";")
     )
